@@ -9,22 +9,43 @@ export default function Transactions() {
       id: '1',
       icon: 'home',
       bgColor: '#FFB74D',
-      title: 'Home Rent',
+      title: 'Rent',
       amount: -350.00,
     },
     {
       id: '2',
-      icon: 'paw',
-      bgColor: '#2196F3',
-      title: 'Pet Groom',
+      icon: 'fast-food',
+      bgColor: '#702963',
+      title: 'Food',
       amount: -50.00,
     },
     {
       id: '3',
-      icon: 'phone-portrait',
+      icon: 'car',
       bgColor: '#4CAF50',
-      title: 'Recharge',
+      title: 'Transport',
       amount: -100.00,
+    },
+    {
+      id: '4',
+      icon: 'cart',
+      bgColor: '#42A5F5',
+      title: 'Shopping',
+      amount: 2500.00,
+    },
+    {
+      id: '5',
+      icon: 'game-controller',
+      bgColor: '#9C27B0',
+      title: 'Entertainment',
+      amount: 200.00,
+    },
+    {
+      id: '6',
+      icon: 'grid',
+      bgColor: 'blue',
+      title: 'Others',
+      amount: 500.00,
     },
     // Add more expense categories as needed
   ];
@@ -44,12 +65,12 @@ export default function Transactions() {
       <ScrollView className="flex-1">
         {/* Summary Card */}
         <View className="p-4">
-          <View className="bg-blue-50 p-4 rounded-2xl mb-6">
-            <Text className="text-gray-600 text-base font-semibold mb-2">Total Expenses</Text>
-            <Text className="text-3xl font-bold  text-gray-900">
-              ${Math.abs(totalExpenses).toFixed(2)}
+          <View className="bg-[#8e5347] p-4 rounded-2xl mb-6 justify-center items-center">
+            <Text className="text-white text-base font-semibold mb-2">Total Expenses</Text>
+            <Text className="text-3xl font-bold  text-white">
+              Ksh: {Math.abs(totalExpenses).toFixed(2)}
             </Text>
-            <Text className="text-gray-500 mt-1 font-semibold">
+            <Text className="mt-1 font-semibold text-white">
               {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </Text>
           </View>
@@ -57,7 +78,7 @@ export default function Transactions() {
           {/* Expense List */}
           <View className="bg-gray-50 rounded-3xl p-4">
             <View className="mb-4">
-              <Text className="text-gray-800 text-xl font-semibold">All Expenses</Text>
+              <Text className="text-gray-800 text-xl font-semibold">All Total Expenses</Text>
             </View>
 
             {expenses.map(expense => (
@@ -85,8 +106,8 @@ export default function Transactions() {
                     </View>
                   </View>
                 </View>
-                <Text className="text-red-500 text-lg font-medium">
-                  ${Math.abs(expense.amount).toFixed(2)}
+                <Text className="text-red-900 text-lg font-medium">
+                  Ksh: {Math.abs(expense.amount).toFixed(2)}
                 </Text>
               </View>
             ))}
@@ -95,14 +116,14 @@ export default function Transactions() {
             <View className="mt-6 pt-4 border-t border-gray-200 space-y-3">
               <View className="flex-row justify-between items-center">
                 <Text className="text-gray-500">Number of Transactions</Text>
-                <Text className="text-lg font-semibold text-gray-800">
+                <Text className="text-lg font-semibold text-[#aa6558]">
                   {expenses.length}
                 </Text>
               </View>
               <View className="flex-row justify-between items-center">
                 <Text className="text-gray-500">Total Amount</Text>
-                <Text className="text-xl font-bold text-red-500">
-                  ${Math.abs(totalExpenses).toFixed(2)}
+                <Text className="text-xl font-bold text-[#643f38]">
+                  Ksh: {Math.abs(totalExpenses).toFixed(2)}
                 </Text>
               </View>
             </View>

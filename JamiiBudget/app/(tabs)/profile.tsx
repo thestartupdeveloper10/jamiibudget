@@ -91,7 +91,7 @@ export default function Profile() {
               <Text className="text-xl font-bold text-gray-800">John Doe</Text>
               <Text className="text-gray-500">john.doe@example.com</Text>
               <View 
-                className="bg-blue-500 self-start px-4 py-2 rounded-full mt-2"
+                className="bg-[#351e1a] self-start px-4 py-2 rounded-full mt-2"
                 onTouchEnd={() => console.log('Edit profile')}
               >
                 <Text className="text-white font-medium">Edit Profile</Text>
@@ -102,15 +102,15 @@ export default function Profile() {
           {/* Stats Row */}
           <View className="flex-row justify-between mt-6 pt-6 border-t border-gray-100">
             <View className="items-center">
-              <Text className="text-2xl font-bold text-gray-800">KES 25,400</Text>
-              <Text className="text-gray-500">Total Savings</Text>
+              <Text className="text-2xl font-bold text-[#8e5347]">KES 25,400</Text>
+              <Text className="text-gray-500">Total Balance</Text>
             </View>
             <View className="items-center">
-              <Text className="text-2xl font-bold text-gray-800">42</Text>
+              <Text className="text-2xl font-bold text-[#8e5347]">42</Text>
               <Text className="text-gray-500">Transactions</Text>
             </View>
             <View className="items-center">
-              <Text className="text-2xl font-bold text-gray-800">8</Text>
+              <Text className="text-2xl font-bold text-[#8e5347]">8</Text>
               <Text className="text-gray-500">Categories</Text>
             </View>
           </View>

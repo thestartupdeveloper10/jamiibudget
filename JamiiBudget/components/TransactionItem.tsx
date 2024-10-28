@@ -34,7 +34,7 @@ export default function TransactionItem({
           >
             <Ionicons name={icon} size={20} color={iconColor} />
           </View>
-          <Text className="text-gray-800 font-medium">{title}</Text>
+          <Text className="text-[#e4c3bd] font-medium">{title}</Text>
         </View>
         <View>
           <Text className={`text-right ${amount < 0 ? 'text-red-500' : 'text-green-500'}`}>

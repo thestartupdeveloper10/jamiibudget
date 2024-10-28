@@ -89,15 +89,11 @@ export default function Home() {
         </View>
 
         {/* Balance Card */}
-        <LinearGradient
-          colors={['#60A5FA', '#E879F9']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          className="mt-6 p-4 rounded-3xl"
-        >
+        <View className='rounded-md bg-[#351e1a] mt-6 p-4'>
+        
           <View className='flex justify-center items-center'>
             <Text className="text-white text-lg mb-2 font-bold">Total Balance</Text>
-            <Text className="text-white text-3xl font-bold">$ 4800.00</Text>
+            <Text className="text-white text-3xl font-bold">Ksh: 4800.00</Text>
           </View>
 
           {/* Income/Expenses Row */}
@@ -108,7 +104,7 @@ export default function Home() {
               </View>
               <View>
                 <Text className="text-white text-sm font-semibold">Income</Text>
-                <Text className="text-white font-bold">2,500.000</Text>
+                <Text className="text-white font-bold">Ksh: 2,500.000</Text>
               </View>
             </View>
 
@@ -118,18 +114,18 @@ export default function Home() {
               </View>
               <View>
                 <Text className="text-white text-sm font-semibold">Expenses</Text>
-                <Text className="text-white font-bold">800.00</Text>
+                <Text className="text-white font-bold">Ksh: 800.00</Text>
               </View>
             </View>
           </View>
-        </LinearGradient>
+        </View>
 
         {/* Transactions Section */}
         <View className="mt-6">
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-gray-800 text-lg font-semibold">Latest Transactions</Text>
             <TouchableOpacity>
-              <Text className="text-blue-500">View All</Text>
+              <Text className="text-[#643f38]">View All</Text>
             </TouchableOpacity>
           </View>
             <View className='gap-4'>

@@ -21,6 +21,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           ),
+          tabBarActiveTintColor:'#351e1a'
         }}
       />
       <Tabs.Screen
@@ -30,6 +31,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list" size={size} color={color} />
           ),
+          tabBarActiveTintColor:'#351e1a'
         }}
       />
       <Tabs.Screen
@@ -37,10 +39,11 @@ export default function TabsLayout() {
         options={{
           title: "Add",
           tabBarIcon: ({ color, size }) => (
-            <View className="bg-blue-500 rounded-full p-2 -mt-6">
+            <View className="bg-[#351e1a] rounded-full p-2 -mt-6">
               <Ionicons name="add" size={size} color="white" />
             </View>
           ),
+          tabBarActiveTintColor:'#351e1a'
         }}
       />
       <Tabs.Screen
@@ -50,6 +53,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="stats-chart" size={size} color={color} />
           ),
+          tabBarActiveTintColor:'#351e1a'
         }}
       />
       <Tabs.Screen
@@ -59,6 +63,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
+          tabBarActiveTintColor:'#351e1a'
         }}
       />
     </Tabs>
