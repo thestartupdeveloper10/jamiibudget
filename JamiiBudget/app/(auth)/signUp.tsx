@@ -18,15 +18,12 @@ export default function SignUp() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const { control, handleSubmit, formState: { errors }, watch } = useForm<FormData>({
     defaultValues: {
       fullName: '',
       email: '',
-      phone: '',
       password: '',
-      confirmPassword: ''
     }
   });
 
@@ -47,8 +44,9 @@ export default function SignUp() {
   };
 
   return (
-    <ScrollView className="flex-1  bg-white">
-      <View className="p-6 h-full justify-center">
+    <View className="flex-1 justify-center bg-white">
+    <ScrollView>
+      <View className="p-6 h-full justify-center" style={{ minHeight: 700 }}>
         {/* Header */}
         <View className="mb-8">
           <Text className="text-3xl font-bold text-gray-800">Create Account</Text>
@@ -115,36 +113,6 @@ export default function SignUp() {
             )}
           </View>
 
-          {/* Phone Input */}
-          <View>
-            <Text className="text-gray-700 mb-2">Phone Number</Text>
-            <Controller
-              control={control}
-              rules={{
-                required: 'Phone number is required',
-                pattern: {
-                  value: /^[0-9]{10}$/,
-                  message: 'Please enter a valid phone number'
-                }
-              }}
-              name="phone"
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  className={`p-4 border rounded-xl bg-gray-50 ${
-                    errors.phone ? 'border-red-500' : 'border-gray-200'
-                  }`}
-                  placeholder="Enter your phone number"
-                  keyboardType="phone-pad"
-                  onChangeText={onChange}
-                  value={value}
-                />
-              )}
-            />
-            {errors.phone && (
-              <Text className="text-red-500 mt-1">{errors.phone.message}</Text>
-            )}
-          </View>
-
           {/* Password Input */}
           <View>
             <Text className="text-gray-700 mb-2">Password</Text>
@@ -186,49 +154,6 @@ export default function SignUp() {
               <Text className="text-red-500 mt-1">{errors.password.message}</Text>
             )}
           </View>
-
-          {/* Confirm Password Input */}
-          <View>
-            <Text className="text-gray-700 mb-2">Confirm Password</Text>
-            <View className="relative">
-              <Controller
-                control={control}
-                rules={{
-                  required: 'Please confirm your password',
-                  validate: value =>
-                    value === password || 'Passwords do not match'
-                }}
-                name="confirmPassword"
-                render={({ field: { onChange, value } }) => (
-                  <TextInput
-                    className={`p-4 border rounded-xl bg-gray-50 ${
-                      errors.confirmPassword ? 'border-red-500' : 'border-gray-200'
-                    }`}
-                    placeholder="Confirm your password"
-                    secureTextEntry={!showConfirmPassword}
-                    onChangeText={onChange}
-                    value={value}
-                  />
-                )}
-              />
-              <TouchableOpacity
-                className="absolute right-4 top-4"
-                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-              >
-                <Ionicons
-                  name={showConfirmPassword ? 'eye-off' : 'eye'}
-                  size={24}
-                  color="gray"
-                />
-              </TouchableOpacity>
-            </View>
-            {errors.confirmPassword && (
-              <Text className="text-red-500 mt-1">
-                {errors.confirmPassword.message}
-              </Text>
-            )}
-          </View>
-
           {/* Register Button */}
           <TouchableOpacity
             className="bg-blue-500 p-4 rounded-xl mt-6"
@@ -254,5 +179,6 @@ export default function SignUp() {
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 }

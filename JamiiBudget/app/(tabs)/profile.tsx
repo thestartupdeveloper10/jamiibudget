@@ -11,23 +11,12 @@ const menuItems = [
     items: [
       { id: '1', name: 'Edit Profile', icon: 'person-outline', color: '#2196F3' },
       { id: '2', name: 'Change Password', icon: 'lock-closed-outline', color: '#4CAF50' },
-      { id: '3', name: 'Linked Accounts', icon: 'link-outline', color: '#FF9800' },
-    ]
-  },
-  {
-    title: 'Preferences',
-    items: [
-      { id: '4', name: 'Currency', icon: 'cash-outline', color: '#9C27B0', value: 'KES' },
-      { id: '5', name: 'Notifications', icon: 'notifications-outline', color: '#F44336', toggle: true },
-      { id: '6', name: 'Dark Mode', icon: 'moon-outline', color: '#607D8B', toggle: true },
     ]
   },
   {
     title: 'Other',
     items: [
-      { id: '7', name: 'Help & Support', icon: 'help-circle-outline', color: '#00BCD4' },
-      { id: '8', name: 'About App', icon: 'information-circle-outline', color: '#795548' },
-      { id: '9', name: 'Log Out', icon: 'log-out-outline', color: '#F44336' },
+      { id: '7', name: 'Log Out', icon: 'log-out-outline', color: '#F44336' },
     ]
   }
 ];

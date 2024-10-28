@@ -139,29 +139,6 @@ export default function signIn() {
             )}
           </TouchableOpacity>
 
-          {/* Social Login Options */}
-          <View className="mt-6">
-            <View className="flex-row items-center">
-              <View className="flex-1 h-0.5 bg-gray-200" />
-              <Text className="mx-4 text-gray-500">Or continue with</Text>
-              <View className="flex-1 h-0.5 bg-gray-200" />
-            </View>
-
-            <View className="flex-row justify-center space-x-4 mt-4">
-              {/* Google Sign In */}
-              <TouchableOpacity className="flex-row items-center justify-center border border-gray-200 rounded-xl p-4 flex-1">
-                <Ionicons name="logo-google" size={24} color="#DB4437" />
-                <Text className="ml-2 font-medium text-gray-700">Google</Text>
-              </TouchableOpacity>
-
-              {/* Apple Sign In */}
-              <TouchableOpacity className="flex-row items-center justify-center border border-gray-200 rounded-xl p-4 flex-1">
-                <Ionicons name="logo-apple" size={24} color="#000000" />
-                <Text className="ml-2 font-medium text-gray-700">Apple</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
           {/* Register Link */}
           <View className="flex-row justify-center mt-6">
             <Text className="text-gray-600">Don't have an account? </Text>
