@@ -1,75 +1,108 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native'
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import TransactionItem from '../../components/TransactionItem';
 import { Link } from 'expo-router';
 import { useUser } from '../../contexts/UserContext';
+import { ExpenseDB, IncomeDB } from '../../lib/appwriteDb';
 
-// Sample transaction data
-const transactions = [
-  {
-    id: '1',
-    icon: 'fast-food',
-    iconBgColor: '#FFF3E0',
-    iconColor: '#FFB74D',
-    title: 'Food',
-    amount: -45.00,
-    date: 'Today'
-  },
-  {
-    id: '2',
-    icon: 'car',
-    iconBgColor: '#E8F5E9',
-    iconColor: '#66BB6A',
-    title: 'Transport',
-    amount: -32.50,
-    date: 'Today'
-  },
-  {
-    id: '3',
-    icon: 'wallet',
-    iconBgColor: '#E3F2FD',
-    iconColor: '#42A5F5',
-    title: 'Salary',
-    amount: 2500.00,
-    date: 'Yesterday'
-  },
-  {
-    id: '4',
-    icon: 'cart',
-    iconBgColor: '#E3F2FD',
-    iconColor: '#42A5F5',
-    title: 'Shopping',
-    amount: -2500.00,
-    date: 'Yesterday'
-  },
-  {
-    id: '5',
-    icon: 'game-controller',
-    iconBgColor: '#E3F2FD',
-    iconColor: '#9C27B0',
-    title: 'Entertainment',
-    amount: -200.00,
-    date: 'Yesterday'
-  },
-  {
-    id: '6',
-    icon: 'laptop',
-    iconBgColor: '#E3F2FD',
-    iconColor: '#3F51B5',
-    title: 'Freelance',
-    amount: 4000.00,
-    date: 'Yesterday'
-  },
-  // Add more transactions as needed
-];
+// Define the transaction type based on your database structure
+type Transaction = {
+  $id?: string;
+  userId: string;
+  amount: number;
+  category: string;
+  description: string;
+  date: string;
+  createdAt?: string;
+};
+
+// Icon mappings for categories
+const categoryIcons = {
+  food: { icon: 'fast-food', bgColor: '#FFF3E0', color: '#FFB74D' },
+  shopping: { icon: 'cart', bgColor: '#E3F2FD', color: '#42A5F5' },
+  transport: { icon: 'car', bgColor: '#E8F5E9', color: '#66BB6A' },
+  bills: { icon: 'receipt', bgColor: '#E3F2FD', color: '#F44336' },
+  entertainment: { icon: 'game-controller', bgColor: '#E3F2FD', color: '#9C27B0' },
+  education: { icon: 'book', bgColor: '#E8F5E9', color: '#4CAF50' },
+  salary: { icon: 'wallet', bgColor: '#E3F2FD', color: '#42A5F5' },
+  freelance: { icon: 'laptop', bgColor: '#E3F2FD', color: '#3F51B5' },
+  investment: { icon: 'trending-up', bgColor: '#ECEFF1', color: '#607D8B' },
+  business: { icon: 'business', bgColor: '#E0F2F1', color: '#009688' },
+  other: { icon: 'ellipsis-horizontal', bgColor: '#EFEBE9', color: '#795548' }
+};
 
 export default function Home() {
+  const { current: user } = useUser();
+  const [expenses, setExpenses] = useState<Transaction[]>([]);
+  const [income, setIncome] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const user = useUser()
-  const currentUser = user.current
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.$id) return;
+
+      try {
+        const [expenseData, incomeData] = await Promise.all([
+          ExpenseDB.listByUser(user.$id),
+          IncomeDB.listByUser(user.$id)
+        ]);
+
+        setExpenses(expenseData);
+        setIncome(incomeData);
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  // Calculate totals
+  const totalIncome = income.reduce((sum, item) => sum + item.amount, 0);
+  const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
+  const totalBalance = totalIncome - totalExpenses;
+
+  // Combine and sort transactions
+  const allTransactions = [...expenses, ...income]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 10); // Get latest 10 transactions
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  const formatAmount = (amount: number) => {
+    return `KES ${Math.abs(amount).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  };
+
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <Text>Loading...</Text>
+        <ActivityIndicator size="large" color="#FFB74D" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <StatusBar style="dark" />
@@ -81,29 +114,26 @@ export default function Home() {
               <Ionicons name="person" size={24} color="#FFB74D" />
             </View>
             <Link href='/(tabs)/profile'>
-            <View className='px-3'>
-              
-              <Text className="text-gray-400 text-sm font-bold">Welcome!</Text>
-              <Text className="text-gray-800 text-lg font-bold">{currentUser?.name}</Text>
-              
-            </View>
+              <View className='px-3'>
+                <Text className="text-gray-400 text-sm font-bold">Welcome!</Text>
+                <Text className="text-gray-800 text-lg font-bold">{user?.name}</Text>
+              </View>
             </Link>
           </View>
           <TouchableOpacity>
             <Link href='(tabs)/profile'>
-            <View className="w-10 h-10 bg-gray-50 rounded-full justify-center items-center">
-              <Ionicons name="settings-outline" size={20} color="#666" />
-            </View>
+              <View className="w-10 h-10 bg-gray-50 rounded-full justify-center items-center">
+                <Ionicons name="settings-outline" size={20} color="#666" />
+              </View>
             </Link>
           </TouchableOpacity>
         </View>
 
         {/* Balance Card */}
         <View className='rounded-md bg-[#351e1a] mt-6 p-4'>
-        
           <View className='flex justify-center items-center'>
             <Text className="text-white text-lg mb-2 font-bold">Total Balance</Text>
-            <Text className="text-white text-3xl font-bold">Ksh: 4800.00</Text>
+            <Text className="text-white text-3xl font-bold">{formatAmount(totalBalance)}</Text>
           </View>
 
           {/* Income/Expenses Row */}
@@ -114,7 +144,7 @@ export default function Home() {
               </View>
               <View>
                 <Text className="text-white text-sm font-semibold">Income</Text>
-                <Text className="text-white font-bold">Ksh: 2,500.000</Text>
+                <Text className="text-white font-bold">{formatAmount(totalIncome)}</Text>
               </View>
             </View>
 
@@ -124,7 +154,7 @@ export default function Home() {
               </View>
               <View>
                 <Text className="text-white text-sm font-semibold">Expenses</Text>
-                <Text className="text-white font-bold">Ksh: 800.00</Text>
+                <Text className="text-white font-bold">{formatAmount(totalExpenses)}</Text>
               </View>
             </View>
           </View>
@@ -138,26 +168,33 @@ export default function Home() {
               <Text className="text-[#643f38]">View All</Text>
             </TouchableOpacity>
           </View>
-            <View className='gap-4'>
-          {/* Transaction List */}
-          {transactions.map(transaction => (
-            <TransactionItem
-              key={transaction.id}
-              icon={transaction.icon as any}
-              iconBgColor={transaction.iconBgColor}
-              iconColor={transaction.iconColor}
-              title={transaction.title}
-              amount={transaction.amount}
-              date={transaction.date}
-              onPress={() => {
-                // Handle transaction press
-                console.log(`Pressed transaction: ${transaction.title}`);
-              }}
-            />
-          ))}
+          <View className='gap-4'>
+            {allTransactions.length === 0 ? (
+              <Text className="text-gray-500 text-center py-4">No transactions yet</Text>
+            ) : (
+              allTransactions.map(transaction => {
+                const category = transaction.category.toLowerCase();
+                const iconConfig = categoryIcons[category as keyof typeof categoryIcons] || categoryIcons.other;
+                const isExpense = expenses.some(exp => exp.$id === transaction.$id);
+                
+                return (
+                  <TransactionItem
+                    key={transaction.$id}
+                    icon={iconConfig.icon}
+                    iconBgColor={iconConfig.bgColor}
+                    iconColor={iconConfig.color}
+                    title={transaction.category}
+                    amount={isExpense ? -transaction.amount : transaction.amount}
+                    date={formatDate(transaction.date)}
+                    onPress={() => {
+                      console.log(`Pressed transaction: ${transaction.$id}`);
+                    }}
+                  />
+                );
+              })
+            )}
           </View>
         </View>
-        <Link href={'/(auth)/signIn'}>Login</Link>
       </ScrollView>
     </SafeAreaView>
   );

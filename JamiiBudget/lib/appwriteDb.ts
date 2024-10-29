@@ -7,7 +7,7 @@ import {
   ATTRIBUTE_NAMES 
 } from "./appwrite";
 
-// Types
+// Types remain the same...
 export type ExpenseCategory = 
   | "food"
   | "shopping"
@@ -34,7 +34,6 @@ export interface Transaction {
   [ATTRIBUTE_NAMES.CREATED_AT]?: string;
 }
 
-// Utility function to format document data
 const formatTransactionData = (data: Omit<Transaction, "$id" | "createdAt">) => ({
   [ATTRIBUTE_NAMES.USER_ID]: data.userId,
   [ATTRIBUTE_NAMES.AMOUNT]: data.amount,
@@ -44,9 +43,18 @@ const formatTransactionData = (data: Omit<Transaction, "$id" | "createdAt">) => 
   [ATTRIBUTE_NAMES.CREATED_AT]: new Date().toISOString(),
 });
 
+// Helper function to validate userId
+const validateUserId = (userId: string | undefined): string => {
+  if (!userId) {
+    throw new Error('User must be logged in to perform this action');
+  }
+  return userId;
+};
+
 export const ExpenseDB = {
   async create(expense: Omit<Transaction, "$id" | "createdAt">): Promise<Transaction> {
     try {
+      validateUserId(expense.userId);
       const response = await databases.createDocument(
         DATABASE_ID,
         EXPENSES_COLLECTION_ID,
@@ -60,8 +68,12 @@ export const ExpenseDB = {
     }
   },
 
-  async listByUser(userId: string): Promise<Transaction[]> {
+  async listByUser(userId?: string): Promise<Transaction[]> {
     try {
+      if (!userId) {
+        return []; // Return empty array when user is not logged in
+      }
+
       const response = await databases.listDocuments(
         DATABASE_ID,
         EXPENSES_COLLECTION_ID,
@@ -73,37 +85,55 @@ export const ExpenseDB = {
       return response.documents as Transaction[];
     } catch (error) {
       console.error("Error fetching expenses:", error);
+      if (error instanceof Error && error.message.includes('Equal queries require')) {
+        return []; // Return empty array for invalid query
+      }
       throw error;
     }
   },
 
-
-
   async getByDateRange(
-    userId: string, 
-    startDate: string, 
-    endDate: string
+    userId?: string, 
+    startDate?: string, 
+    endDate?: string
   ): Promise<Transaction[]> {
     try {
+      if (!userId) {
+        return []; // Return empty array when user is not logged in
+      }
+
+      const queries = [Query.equal(ATTRIBUTE_NAMES.USER_ID, userId)];
+      
+      if (startDate) {
+        queries.push(Query.greaterThanEqual(ATTRIBUTE_NAMES.DATE, startDate));
+      }
+      
+      if (endDate) {
+        queries.push(Query.lessThanEqual(ATTRIBUTE_NAMES.DATE, endDate));
+      }
+
+      queries.push(Query.orderDesc(ATTRIBUTE_NAMES.DATE));
+
       const response = await databases.listDocuments(
         DATABASE_ID,
         EXPENSES_COLLECTION_ID,
-        [
-          Query.equal(ATTRIBUTE_NAMES.USER_ID, userId),
-          Query.greaterThanEqual(ATTRIBUTE_NAMES.DATE, startDate),
-          Query.lessThanEqual(ATTRIBUTE_NAMES.DATE, endDate),
-          Query.orderDesc(ATTRIBUTE_NAMES.DATE),
-        ]
+        queries
       );
       return response.documents as Transaction[];
     } catch (error) {
       console.error("Error fetching expenses by date range:", error);
+      if (error instanceof Error && error.message.includes('Equal queries require')) {
+        return []; // Return empty array for invalid query
+      }
       throw error;
     }
   },
 
   async update(expenseId: string, expense: Partial<Transaction>): Promise<Transaction> {
     try {
+      if (expense.userId) {
+        validateUserId(expense.userId);
+      }
       const response = await databases.updateDocument(
         DATABASE_ID,
         EXPENSES_COLLECTION_ID,
@@ -134,6 +164,7 @@ export const ExpenseDB = {
 export const IncomeDB = {
   async create(income: Omit<Transaction, "$id" | "createdAt">): Promise<Transaction> {
     try {
+      validateUserId(income.userId);
       const response = await databases.createDocument(
         DATABASE_ID,
         INCOME_COLLECTION_ID,
@@ -147,8 +178,12 @@ export const IncomeDB = {
     }
   },
 
-  async listByUser(userId: string): Promise<Transaction[]> {
+  async listByUser(userId?: string): Promise<Transaction[]> {
     try {
+      if (!userId) {
+        return []; // Return empty array when user is not logged in
+      }
+
       const response = await databases.listDocuments(
         DATABASE_ID,
         INCOME_COLLECTION_ID,
@@ -160,35 +195,55 @@ export const IncomeDB = {
       return response.documents as Transaction[];
     } catch (error) {
       console.error("Error fetching income:", error);
+      if (error instanceof Error && error.message.includes('Equal queries require')) {
+        return []; // Return empty array for invalid query
+      }
       throw error;
     }
   },
 
   async getByDateRange(
-    userId: string, 
-    startDate: string, 
-    endDate: string
+    userId?: string, 
+    startDate?: string, 
+    endDate?: string
   ): Promise<Transaction[]> {
     try {
+      if (!userId) {
+        return []; // Return empty array when user is not logged in
+      }
+
+      const queries = [Query.equal(ATTRIBUTE_NAMES.USER_ID, userId)];
+      
+      if (startDate) {
+        queries.push(Query.greaterThanEqual(ATTRIBUTE_NAMES.DATE, startDate));
+      }
+      
+      if (endDate) {
+        queries.push(Query.lessThanEqual(ATTRIBUTE_NAMES.DATE, endDate));
+      }
+
+      queries.push(Query.orderDesc(ATTRIBUTE_NAMES.DATE));
+
       const response = await databases.listDocuments(
         DATABASE_ID,
         INCOME_COLLECTION_ID,
-        [
-          Query.equal(ATTRIBUTE_NAMES.USER_ID, userId),
-          Query.greaterThanEqual(ATTRIBUTE_NAMES.DATE, startDate),
-          Query.lessThanEqual(ATTRIBUTE_NAMES.DATE, endDate),
-          Query.orderDesc(ATTRIBUTE_NAMES.DATE),
-        ]
+        queries
       );
       return response.documents as Transaction[];
     } catch (error) {
       console.error("Error fetching income by date range:", error);
+      if (error instanceof Error && error.message.includes('Equal queries require')) {
+        return []; // Return empty array for invalid query
+      }
       throw error;
     }
   },
 
   async update(incomeId: string, income: Partial<Transaction>): Promise<Transaction> {
     try {
+      if (income.userId) {
+        validateUserId(income.userId);
+      }
       const response = await databases.updateDocument(
         DATABASE_ID,
         INCOME_COLLECTION_ID,

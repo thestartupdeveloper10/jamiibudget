@@ -21,24 +21,36 @@ export default function TransactionItem({
   date,
   onPress
 }: TransactionItemProps) {
+  const formatAmount = (value: number) => {
+    return `KES ${Math.abs(value).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  };
+
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       onPress={onPress}
       className="mb-3"
+      activeOpacity={0.7}
     >
-      <View className="flex-row  justify-between items-center bg-gray-50 p-4 rounded-2xl shadow-sm border border-gray-100">
-        <View className="flex-row items-center space-x-3">
-          <View 
-            className={`w-10 h-10 rounded-full justify-center items-center`}
+      <View className="flex-row justify-between items-center bg-gray-50 p-4 rounded-2xl shadow-sm border border-gray-100">
+        <View className="flex-row items-center gap-3">
+          <View
+            className="w-10 h-10 rounded-full justify-center items-center"
             style={{ backgroundColor: iconBgColor }}
           >
             <Ionicons name={icon} size={20} color={iconColor} />
           </View>
-          <Text className="text-[#e4c3bd] font-medium">{title}</Text>
+          <Text className="text-gray-800 font-medium capitalize">{title}</Text>
         </View>
-        <View>
-          <Text className={`text-right ${amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
-            {amount < 0 ? '-' : '+'}${Math.abs(amount).toFixed(2)}
+        <View className="items-end">
+          <Text 
+            className={`text-right font-medium ${
+              amount < 0 ? 'text-red-500' : 'text-green-500'
+            }`}
+          >
+            {amount < 0 ? '-' : '+'}{formatAmount(Math.abs(amount))}
           </Text>
           <Text className="text-gray-400 text-sm">{date}</Text>
         </View>

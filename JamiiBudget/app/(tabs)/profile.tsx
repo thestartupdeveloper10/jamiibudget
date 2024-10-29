@@ -1,43 +1,95 @@
-import React from 'react';
-import { View, Text, ScrollView, Image, Switch } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUser } from '../../contexts/UserContext';
+import { ExpenseDB, IncomeDB } from '../../lib/appwriteDb';
 
+// Menu items with only the necessary functionality for now
 const menuItems = [
   {
     title: 'Account',
     items: [
-      { id: '1', name: 'Edit Profile', icon: 'person-outline', color: '#2196F3' },
-      { id: '2', name: 'Change Password', icon: 'lock-closed-outline', color: '#4CAF50' },
+      { id: '1', name: 'Edit Profile', icon: 'person-outline', color: '#2196F3', disabled: true },
+      { id: '2', name: 'Change Password', icon: 'lock-closed-outline', color: '#4CAF50', disabled: true },
     ]
   },
   {
     title: 'Other',
     items: [
-      { id: '3', name: 'Log Out', icon: 'log-out-outline', color: '#F44336' },
+      { id: '3', name: 'Log Out', icon: 'log-out-outline', color: '#F44336', disabled: false },
     ]
   }
 ];
 
 export default function Profile() {
-  const user = useUser();
+  const { current: currentUser, logout } = useUser();
   const router = useRouter();
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = React.useState(false);
+  const [stats, setStats] = useState({
+    totalBalance: 0,
+    transactionCount: 0
+  });
+  const [loading, setLoading] = useState(true);
 
-  const currentUser = user.current;
-  const handleMenuItemPress = async (itemId: string) => {
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!currentUser?.$id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch all transactions
+        const [expenses, income] = await Promise.all([
+          ExpenseDB.listByUser(currentUser.$id),
+          IncomeDB.listByUser(currentUser.$id)
+        ]);
+
+        // Calculate stats
+        const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const totalIncome = income.reduce((sum, inc) => sum + inc.amount, 0);
+        
+        setStats({
+          totalBalance: totalIncome - totalExpenses,
+          transactionCount: expenses.length + income.length
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [currentUser]);
+
+  const handleMenuItemPress = async (itemId: string, disabled: boolean) => {
+    if (disabled) {
+      // Function not implemented yet
+      return;
+    }
+
     switch (itemId) {
       case '3': // Logout
-        await  user.logout();
-        router.push('/(auth)/signIn');
+        try {
+          await logout();
+          router.push('/(auth)/signIn');
+        } catch (error) {
+          console.error('Error logging out:', error);
+        }
         break;
       default:
         console.log(`Pressed item ${itemId}`);
     }
+  };
+
+  const formatAmount = (amount: number) => {
+    return `KES ${Math.abs(amount).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
   };
 
   return (
@@ -60,27 +112,31 @@ export default function Profile() {
             <View className="ml-4 flex-1">
               <Text className="text-xl font-bold text-gray-800">{currentUser?.name}</Text>
               <Text className="text-gray-500">{currentUser?.email}</Text>
-              <View 
-                className="bg-[#351e1a] self-start px-4 py-2 rounded-full mt-2"
-                onTouchEnd={() => console.log('Edit profile')}
+              <TouchableOpacity 
+                className="bg-[#351e1a] self-start px-4 py-2 rounded-full mt-2 opacity-50"
+                disabled={true}
               >
                 <Text className="text-white font-medium">Edit Profile</Text>
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
 
           {/* Stats Row */}
           <View className="flex-row justify-between mt-6 pt-6 border-t border-gray-100">
             <View className="items-center">
-              <Text className="text-2xl font-bold text-[#8e5347]">KES 25,400</Text>
+              <Text className="text-2xl font-bold text-[#8e5347]">
+                {loading ? '...' : formatAmount(stats.totalBalance)}
+              </Text>
               <Text className="text-gray-500">Total Balance</Text>
             </View>
             <View className="items-center">
-              <Text className="text-2xl font-bold text-[#8e5347]">42</Text>
+              <Text className="text-2xl font-bold text-[#8e5347]">
+                {loading ? '...' : stats.transactionCount}
+              </Text>
               <Text className="text-gray-500">Transactions</Text>
             </View>
             <View className="items-center">
-              <Text className="text-2xl font-bold text-[#8e5347]">8</Text>
+              <Text className="text-2xl font-bold text-[#8e5347]">11</Text>
               <Text className="text-gray-500">Categories</Text>
             </View>
           </View>
@@ -91,22 +147,27 @@ export default function Profile() {
           <View key={section.title} className="px-4 mb-6">
             <Text className="text-gray-500 mb-2 ml-1">{section.title}</Text>
             {section.items.map((item) => (
-              <View
+              <TouchableOpacity
                 key={item.id}
-                className="flex-row items-center justify-between p-4 bg-white rounded-xl mb-2"
-                onTouchEnd={() => handleMenuItemPress(item.id)}
+                onPress={() => handleMenuItemPress(item.id, item.disabled)}
+                className={`mb-2 ${item.disabled ? 'opacity-50' : ''}`}
+                disabled={item.disabled}
               >
-                <View className="flex-row items-center">
-                  <View 
-                    className="w-8 h-8 rounded-full items-center justify-center mr-3"
-                    style={{ backgroundColor: `${item.color}20` }}
-                  >
-                    <Ionicons name={item.icon as any} size={20} color={item.color} />
+                <View
+                  className="flex-row items-center justify-between p-4 bg-white rounded-xl"
+                >
+                  <View className="flex-row items-center">
+                    <View 
+                      className="w-8 h-8 rounded-full items-center justify-center mr-3"
+                      style={{ backgroundColor: `${item.color}20` }}
+                    >
+                      <Ionicons name={item.icon as any} size={20} color={item.color} />
+                    </View>
+                    <Text className="text-gray-800 font-medium">{item.name}</Text>
                   </View>
-                  <Text className="text-gray-800 font-medium">{item.name}</Text>
+                  <Ionicons name="chevron-forward" size={20} color="gray" />
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="gray" />
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         ))}
