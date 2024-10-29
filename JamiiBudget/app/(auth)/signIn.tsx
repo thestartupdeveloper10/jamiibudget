@@ -3,16 +3,19 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator 
 import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Controller, useForm } from 'react-hook-form';
+import { useUser } from '../../contexts/UserContext';
 
 type FormData = {
   email: string;
   password: string;
 };
 
-export default function signIn() {
+export default function SignIn() {
+  const user = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
     defaultValues: {
@@ -23,13 +26,17 @@ export default function signIn() {
 
   const onSubmit = async (data: FormData) => {
     try {
+      setError(null);
       setIsLoading(true);
-      // Add your login logic here
-      console.log(data);
-      // On successful login
+      await user.login(data.email, data.password);
       router.replace('/(tabs)/home');
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -45,6 +52,13 @@ export default function signIn() {
             Sign in to continue managing your finances
           </Text>
         </View>
+
+        {/* Error Message */}
+        {error && (
+          <View className="mb-4 p-4 bg-red-100 rounded-xl">
+            <Text className="text-red-600">{error}</Text>
+          </View>
+        )}
 
         {/* Form */}
         <View className="space-y-4">
@@ -86,7 +100,11 @@ export default function signIn() {
               <Controller
                 control={control}
                 rules={{
-                  required: 'Password is required'
+                  required: 'Password is required',
+                  minLength: {
+                    value: 8,
+                    message: 'Password must be at least 8 characters'
+                  }
                 }}
                 name="password"
                 render={({ field: { onChange, value } }) => (
@@ -119,14 +137,16 @@ export default function signIn() {
 
           {/* Forgot Password Link */}
           <View className="items-end">
-            <Link href="/(auth)/forgot-password" className="text-blue-500">
-              Forgot Password?
+            <Link href="/(auth)/forgot-password" asChild>
+              <TouchableOpacity>
+                <Text className="text-blue-500">Forgot Password?</Text>
+              </TouchableOpacity>
             </Link>
           </View>
 
           {/* Login Button */}
           <TouchableOpacity
-            className="bg-blue-500 p-4 rounded-xl mt-6"
+            className={`p-4 rounded-xl mt-6 ${isLoading ? 'bg-blue-400' : 'bg-blue-500'}`}
             onPress={handleSubmit(onSubmit)}
             disabled={isLoading}
           >
@@ -142,8 +162,10 @@ export default function signIn() {
           {/* Register Link */}
           <View className="flex-row justify-center mt-6">
             <Text className="text-gray-600">Don't have an account? </Text>
-            <Link href="/(auth)/signUp" className="text-blue-500 font-semibold">
-              Sign Up
+            <Link href="/(auth)/signUp" asChild>
+              <TouchableOpacity>
+                <Text className="text-blue-500 font-semibold">Sign Up</Text>
+              </TouchableOpacity>
             </Link>
           </View>
         </View>

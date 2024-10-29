@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useUser } from '../../contexts/UserContext';
 
 const menuItems = [
   {
@@ -16,59 +17,28 @@ const menuItems = [
   {
     title: 'Other',
     items: [
-      { id: '7', name: 'Log Out', icon: 'log-out-outline', color: '#F44336' },
+      { id: '3', name: 'Log Out', icon: 'log-out-outline', color: '#F44336' },
     ]
   }
 ];
 
 export default function Profile() {
+  const user = useUser();
   const router = useRouter();
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = React.useState(false);
 
-  const handleMenuItemPress = (itemId: string) => {
+  const currentUser = user.current;
+  const handleMenuItemPress = async (itemId: string) => {
     switch (itemId) {
-      case '9': // Logout
-        // Add your logout logic here
+      case '3': // Logout
+        await  user.logout();
         router.push('/(auth)/signIn');
         break;
       default:
         console.log(`Pressed item ${itemId}`);
     }
   };
-
-  const MenuItem = ({ item }: { item: any }) => (
-    <View
-      className="flex-row items-center justify-between p-4 bg-white rounded-xl mb-2"
-      onTouchEnd={() => handleMenuItemPress(item.id)}
-    >
-      <View className="flex-row items-center">
-        <View 
-          className="w-8 h-8 rounded-full items-center justify-center mr-3"
-          style={{ backgroundColor: `${item.color}20` }}
-        >
-          <Ionicons name={item.icon as any} size={20} color={item.color} />
-        </View>
-        <Text className="text-gray-800 font-medium">{item.name}</Text>
-      </View>
-      {item.toggle ? (
-        <Switch
-          value={item.name === 'Notifications' ? notificationsEnabled : darkModeEnabled}
-          onValueChange={(value) => {
-            if (item.name === 'Notifications') {
-              setNotificationsEnabled(value);
-            } else {
-              setDarkModeEnabled(value);
-            }
-          }}
-        />
-      ) : item.value ? (
-        <Text className="text-gray-500">{item.value}</Text>
-      ) : (
-        <Ionicons name="chevron-forward" size={20} color="gray" />
-      )}
-    </View>
-  );
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
@@ -88,8 +58,8 @@ export default function Profile() {
               className="w-20 h-20 rounded-full"
             />
             <View className="ml-4 flex-1">
-              <Text className="text-xl font-bold text-gray-800">John Doe</Text>
-              <Text className="text-gray-500">john.doe@example.com</Text>
+              <Text className="text-xl font-bold text-gray-800">{currentUser?.name}</Text>
+              <Text className="text-gray-500">{currentUser?.email}</Text>
               <View 
                 className="bg-[#351e1a] self-start px-4 py-2 rounded-full mt-2"
                 onTouchEnd={() => console.log('Edit profile')}
@@ -121,7 +91,22 @@ export default function Profile() {
           <View key={section.title} className="px-4 mb-6">
             <Text className="text-gray-500 mb-2 ml-1">{section.title}</Text>
             {section.items.map((item) => (
-              <MenuItem key={item.id} item={item} />
+              <View
+                key={item.id}
+                className="flex-row items-center justify-between p-4 bg-white rounded-xl mb-2"
+                onTouchEnd={() => handleMenuItemPress(item.id)}
+              >
+                <View className="flex-row items-center">
+                  <View 
+                    className="w-8 h-8 rounded-full items-center justify-center mr-3"
+                    style={{ backgroundColor: `${item.color}20` }}
+                  >
+                    <Ionicons name={item.icon as any} size={20} color={item.color} />
+                  </View>
+                  <Text className="text-gray-800 font-medium">{item.name}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color="gray" />
+              </View>
             ))}
           </View>
         ))}

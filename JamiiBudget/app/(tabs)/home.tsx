@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import TransactionItem from '../../components/TransactionItem';
 import { Link } from 'expo-router';
+import { useUser } from '../../contexts/UserContext';
 
 // Sample transaction data
 const transactions = [
@@ -66,6 +67,9 @@ const transactions = [
 ];
 
 export default function Home() {
+
+  const user = useUser()
+  const currentUser = user.current
   return (
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <StatusBar style="dark" />
@@ -76,15 +80,21 @@ export default function Home() {
             <View className="w-12 h-12 bg-yellow-100 rounded-full justify-center items-center">
               <Ionicons name="person" size={24} color="#FFB74D" />
             </View>
+            <Link href='/(tabs)/profile'>
             <View className='px-3'>
+              
               <Text className="text-gray-400 text-sm font-bold">Welcome!</Text>
-              <Text className="text-gray-800 text-lg font-bold">John Doe</Text>
+              <Text className="text-gray-800 text-lg font-bold">{currentUser?.name}</Text>
+              
             </View>
+            </Link>
           </View>
           <TouchableOpacity>
+            <Link href='(tabs)/profile'>
             <View className="w-10 h-10 bg-gray-50 rounded-full justify-center items-center">
               <Ionicons name="settings-outline" size={20} color="#666" />
             </View>
+            </Link>
           </TouchableOpacity>
         </View>
 

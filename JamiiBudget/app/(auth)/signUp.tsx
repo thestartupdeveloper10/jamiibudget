@@ -3,25 +3,25 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, ActivityIndicator 
 import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Controller, useForm } from 'react-hook-form';
+import { useUser } from '../../contexts/UserContext';
 
 
 // Define the form data type
 type FormData = {
-  fullName: string;
+  username: string;
   email: string;
-  phone: string;
   password: string;
-  confirmPassword: string;
 };
 
 export default function SignUp() {
+  const user = useUser();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const { control, handleSubmit, formState: { errors }, watch } = useForm<FormData>({
     defaultValues: {
-      fullName: '',
+      username: '',
       email: '',
       password: '',
     }
@@ -32,7 +32,7 @@ export default function SignUp() {
   const onSubmit = async (data: FormData) => {
     try {
       setIsLoading(true);
-      // Add your registration logic here
+      user.register(data.email, data.password,data.username);
       console.log(data);
       // On successful registration
       router.replace('/(tabs)/home');
@@ -59,26 +59,26 @@ export default function SignUp() {
         <View className="space-y-4">
           {/* Full Name Input */}
           <View>
-            <Text className="text-gray-700 mb-2">Full Name</Text>
+            <Text className="text-gray-700 mb-2">Username</Text>
             <Controller
               control={control}
               rules={{
-                required: 'Full name is required',
+                required: 'Username is required',
               }}
-              name="fullName"
+              name="username"
               render={({ field: { onChange, value } }) => (
                 <TextInput
                   className={`p-4 border rounded-xl bg-gray-50 ${
-                    errors.fullName ? 'border-red-500' : 'border-gray-200'
+                    errors.username ? 'border-red-500' : 'border-gray-200'
                   }`}
-                  placeholder="Enter your full name"
+                  placeholder="Enter your Username"
                   onChangeText={onChange}
                   value={value}
                 />
               )}
             />
-            {errors.fullName && (
-              <Text className="text-red-500 mt-1">{errors.fullName.message}</Text>
+            {errors.username && (
+              <Text className="text-red-500 mt-1">{errors.username.message}</Text>
             )}
           </View>
 
