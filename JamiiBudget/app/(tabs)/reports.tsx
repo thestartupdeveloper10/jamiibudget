@@ -181,7 +181,7 @@ export default function Reports() {
 
         {/* Monthly Comparison */}
         <View className="mb-8">
-          <Text className="text-lg font-semibold mb-4">Income vs Expenses</Text>
+          <Text className="text-lg font-semibold mb-4">Monthly Expenses</Text>
           <BarChart
             data={{
               labels: monthLabels,

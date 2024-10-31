@@ -42,11 +42,6 @@ export default function Add() {
 
   const selectedCategoryDetails = currentCategories.find(cat => cat.id === selectedCategory);
 
-  console.log(user?.$id)
-  const getData = async () => {
-  console.log(await ExpenseDB.listByUser(user?.$id))}
-
-  getData();
 
   const handleSave = async () => {
     if (!amount || !selectedCategory || !description) {
