@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import TransactionItem from '../../components/TransactionItem';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useUser } from '../../contexts/UserContext';
 import { ExpenseDB, IncomeDB } from '../../lib/appwriteDb';
 
@@ -39,6 +39,7 @@ export default function Home() {
   const [expenses, setExpenses] = useState<Transaction[]>([]);
   const [income, setIncome] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,7 +71,7 @@ export default function Home() {
   // Combine and sort transactions
   const allTransactions = [...expenses, ...income]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 10); // Get latest 10 transactions
+    .slice(0, 5); // Get latest 10 transactions
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -164,7 +165,7 @@ export default function Home() {
         <View className="mt-6">
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-gray-800 text-lg font-semibold">Latest Transactions</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(transactions)/all')}>
               <Text className="text-[#643f38]">View All</Text>
             </TouchableOpacity>
           </View>
@@ -186,9 +187,7 @@ export default function Home() {
                     title={transaction.category}
                     amount={isExpense ? -transaction.amount : transaction.amount}
                     date={formatDate(transaction.date)}
-                    onPress={() => {
-                      console.log(`Pressed transaction: ${transaction.$id}`);
-                    }}
+                    onPress={() => router.push(`/(transactions)/${transaction.$id}`)}
                   />
                 );
               })
