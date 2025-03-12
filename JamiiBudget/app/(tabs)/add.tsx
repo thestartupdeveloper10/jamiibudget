@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ExpenseDB, IncomeDB } from '../../lib/appwriteDb';
 import { useUser } from '../../contexts/UserContext';
+import { useTransactionStore, type TransactionData } from '../../contexts/TransactionContext';
 
 const categories = {
   expense: [
@@ -37,11 +38,19 @@ export default function Add() {
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { setShouldRefresh } = useTransactionStore();
 
   const currentCategories = categories[type];
 
   const selectedCategoryDetails = currentCategories.find(cat => cat.id === selectedCategory);
 
+  const resetForm = () => {
+    setAmount('');
+    setSelectedCategory('');
+    setDescription('');
+    setDate(new Date());
+    setType('expense');
+  };
 
   const handleSave = async () => {
     if (!amount || !selectedCategory || !description) {
@@ -70,7 +79,9 @@ export default function Add() {
         await IncomeDB.create(data);
       }
 
-      router.push('/(tabs)');
+      setShouldRefresh(true);
+      resetForm();
+      router.push('/home');
     } catch (error) {
       console.error('Error saving transaction:', error);
       Alert.alert('Error', 'Failed to save transaction. Please try again.');

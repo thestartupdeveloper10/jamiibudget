@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -7,7 +7,8 @@ import {
   ActivityIndicator, 
   TouchableOpacity, 
   Alert,
-  Platform 
+  Platform,
+  RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -17,6 +18,8 @@ import { useUser } from '../../contexts/UserContext';
 import { Ionicons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import { useFocusEffect } from '@react-navigation/native';
+import { useTransactionStore, type TransactionData } from '../../contexts/TransactionContext';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -28,15 +31,6 @@ const chartConfig = {
   barPercentage: 0.7,
   decimalPlaces: 0,
   useShadowColorFromDataset: false,
-};
-
-type TransactionData = {
-  $id?: string;
-  userId: string;
-  amount: number;
-  category: string;
-  date: string;
-  description?: string;
 };
 
 const formatCurrency = (amount: number) => {
@@ -58,83 +52,123 @@ export default function Reports() {
   const { current: user } = useUser();
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
-  const [expenses, setExpenses] = useState<TransactionData[]>([]);
-  const [income, setIncome] = useState<TransactionData[]>([]);
+  const { 
+    expenses: cachedExpenses, 
+    income: cachedIncome, 
+    lastFetched, 
+    setTransactions,
+    shouldRefresh 
+  } = useTransactionStore();
+  const [expenses, setExpenses] = useState<TransactionData[]>(cachedExpenses);
+  const [income, setIncome] = useState<TransactionData[]>(cachedIncome);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchReportData = useCallback(async () => {
+    if (!user?.$id) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Get last 6 months of data
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 6);
+
+      const [expensesData, incomeData] = await Promise.all([
+        ExpenseDB.getByDateRange(user.$id, startDate.toISOString(), endDate.toISOString()),
+        IncomeDB.getByDateRange(user.$id, startDate.toISOString(), endDate.toISOString())
+      ]);
+
+      // Update both local and global state
+      setTransactions(expensesData, incomeData);
+      setExpenses(expensesData);
+      setIncome(incomeData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      Alert.alert('Error', 'Failed to load transaction data');
+    } finally {
+      setLoading(false);
+      useTransactionStore.getState().setShouldRefresh(false);
+    }
+  }, [user]);
+
+  React.useEffect(() => {
+    if (cachedExpenses.length > 0 || cachedIncome.length > 0) {
+      setExpenses(cachedExpenses);
+      setIncome(cachedIncome);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
       if (!user?.$id) {
         setLoading(false);
         return;
       }
 
-      try {
-        // Get last 6 months of data
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setMonth(startDate.getMonth() - 6);
+      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+      const cacheExpired = !lastFetched || Date.now() - lastFetched > CACHE_DURATION;
 
-        const [expensesData, incomeData] = await Promise.all([
-          ExpenseDB.getByDateRange(user.$id, startDate.toISOString(), endDate.toISOString()),
-          IncomeDB.getByDateRange(user.$id, startDate.toISOString(), endDate.toISOString())
-        ]);
-
-        setExpenses(expensesData);
-        setIncome(incomeData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        Alert.alert('Error', 'Failed to load transaction data');
-      } finally {
+      if (!shouldRefresh && !cacheExpired && (cachedExpenses.length > 0 || cachedIncome.length > 0)) {
+        // Use cached data
+        setExpenses(cachedExpenses);
+        setIncome(cachedIncome);
         setLoading(false);
+        return;
       }
-    };
 
-    fetchData();
-  }, [user]);
+      fetchReportData();
+    }, [user, fetchReportData, cachedExpenses, cachedIncome, lastFetched, shouldRefresh])
+  );
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchReportData().finally(() => setRefreshing(false));
+  }, [fetchReportData]);
 
   // Prepare monthly data
- // Function to get monthly data with proper aggregation
-const getMonthlyData = () => {
-  const monthLabels: string[] = [];
-  const expenseData: number[] = [];
-  const incomeData: number[] = [];
-  
-  // Get the first day of current month
-  const currentDate = new Date();
-  currentDate.setDate(1);
-  
-  // Create a map to store aggregated data
-  const monthlyExpenses = new Map<string, number>();
-  const monthlyIncome = new Map<string, number>();
-  
-  // Aggregate expenses by month
-  expenses.forEach(expense => {
-    const date = new Date(expense.date);
-    const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    monthlyExpenses.set(monthYear, (monthlyExpenses.get(monthYear) || 0) + expense.amount);
-  });
-  
-  // Aggregate income by month
-  income.forEach(inc => {
-    const date = new Date(inc.date);
-    const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-    monthlyIncome.set(monthYear, (monthlyIncome.get(monthYear) || 0) + inc.amount);
-  });
-  
-  // Get last 6 months in reverse chronological order
-  for (let i = 0; i < 6; i++) {
-    const date = new Date(currentDate);
-    date.setMonth(date.getMonth() - i);
-    const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const getMonthlyData = () => {
+    const monthLabels: string[] = [];
+    const expenseData: number[] = [];
+    const incomeData: number[] = [];
     
-    // Add month label and data in reverse order
-    monthLabels.unshift(date.toLocaleDateString('en-US', { month: 'short' }));
-    expenseData.unshift(monthlyExpenses.get(monthYear) || 0);
-    incomeData.unshift(monthlyIncome.get(monthYear) || 0);
-  }
-  
-  return { monthLabels, expenseData, incomeData };
-};
+    // Get the first day of current month
+    const currentDate = new Date();
+    currentDate.setDate(1);
+    
+    // Create a map to store aggregated data
+    const monthlyExpenses = new Map<string, number>();
+    const monthlyIncome = new Map<string, number>();
+    
+    // Aggregate expenses by month
+    expenses.forEach(expense => {
+      const date = new Date(expense.date);
+      const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      monthlyExpenses.set(monthYear, (monthlyExpenses.get(monthYear) || 0) + expense.amount);
+    });
+    
+    // Aggregate income by month
+    income.forEach(inc => {
+      const date = new Date(inc.date);
+      const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      monthlyIncome.set(monthYear, (monthlyIncome.get(monthYear) || 0) + inc.amount);
+    });
+    
+    // Get last 6 months in reverse chronological order
+    for (let i = 0; i < 6; i++) {
+      const date = new Date(currentDate);
+      date.setMonth(date.getMonth() - i);
+      const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      
+      // Add month label and data in reverse order
+      monthLabels.unshift(date.toLocaleDateString('en-US', { month: 'short' }));
+      expenseData.unshift(monthlyExpenses.get(monthYear) || 0);
+      incomeData.unshift(monthlyIncome.get(monthYear) || 0);
+    }
+    
+    return { monthLabels, expenseData, incomeData };
+  };
 
   // Prepare category data for pie chart
   const getCategoryData = () => {
@@ -380,7 +414,16 @@ const getMonthlyData = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 p-4">
+      <ScrollView 
+        className="flex-1 p-4"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#8e5347']}
+          />
+        }
+      >
         {expenses.length === 0 && income.length === 0 ? (
           <View className="flex-1 justify-center items-center py-8">
             <Ionicons name="document-text-outline" size={48} color="#8e5347" />
@@ -438,8 +481,9 @@ const getMonthlyData = () => {
                 />
               </View>
             )}
-{/* Monthly Comparison */}
-<View className="mb-8">
+
+            {/* Monthly Comparison */}
+            <View className="mb-8">
               <Text className="text-lg font-semibold mb-4">Monthly Expenses</Text>
               <BarChart
                 data={{

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +7,7 @@ import TransactionItem from '../../components/TransactionItem';
 import { Link, useRouter } from 'expo-router';
 import { useUser } from '../../contexts/UserContext';
 import { ExpenseDB, IncomeDB } from '../../lib/appwriteDb';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Define the transaction type based on your database structure
 type Transaction = {
@@ -41,27 +42,29 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user?.$id) return;
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        if (!user?.$id) return;
 
-      try {
-        const [expenseData, incomeData] = await Promise.all([
-          ExpenseDB.listByUser(user.$id),
-          IncomeDB.listByUser(user.$id)
-        ]);
+        try {
+          const [expenseData, incomeData] = await Promise.all([
+            ExpenseDB.listByUser(user.$id),
+            IncomeDB.listByUser(user.$id)
+          ]);
 
-        setExpenses(expenseData);
-        setIncome(incomeData);
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+          setExpenses(expenseData as Transaction[]);
+          setIncome(incomeData as Transaction[]);
+        } catch (error) {
+          console.error('Error fetching transactions:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    fetchData();
-  }, [user]);
+      fetchData();
+    }, [user])
+  );
 
   // Calculate totals
   const totalIncome = income.reduce((sum, item) => sum + item.amount, 0);
@@ -70,8 +73,18 @@ export default function Home() {
 
   // Combine and sort transactions
   const allTransactions = [...expenses, ...income]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 5); // Get latest 10 transactions
+    .sort((a, b) => {
+      // First compare by date
+      const dateComparison = new Date(b.date).getTime() - new Date(a.date).getTime();
+      
+      // If dates are equal, compare by createdAt timestamp
+      if (dateComparison === 0 && a.createdAt && b.createdAt) {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      
+      return dateComparison;
+    })
+    .slice(0, 5); // Get latest 5 transactions
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

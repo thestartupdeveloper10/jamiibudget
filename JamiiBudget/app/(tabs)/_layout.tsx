@@ -11,7 +11,9 @@ export default function TabsLayout() {
           elevation: 0,
           borderTopWidth: 1,
           borderTopColor: '#f1f1f1',
+          height:60
         },
+        
       }}
     >
       <Tabs.Screen 
@@ -39,8 +41,8 @@ export default function TabsLayout() {
         options={{
           title: "Add",
           tabBarIcon: ({ color, size }) => (
-            <View className="bg-[#351e1a] rounded-full p-2 -mt-6">
-              <Ionicons name="add" size={size} color="white" />
+            <View className="bg-[#351e1a] -mt-10 h-16 w-16 flex justify-center items-center rounded-full">
+              <Ionicons name="add" size={size} color="white" className="" />
             </View>
           ),
           tabBarActiveTintColor:'#351e1a'

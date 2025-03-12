@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -6,26 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { ExpenseDB, IncomeDB } from '../../lib/appwriteDb';
 import { useUser } from '../../contexts/UserContext';
-
-// Types for our database structure
-type TransactionData = {
-  $id?: string;
-  userId: string;
-  amount: number;
-  category: string;
-  description: string;
-  date: string;
-  createdAt?: string;
-};
-
-// Type for category totals
-type CategoryTotals = {
-  [key: string]: {
-    amount: number;
-    count: number;
-    percentage?: number;
-  };
-};
+import { useFocusEffect } from '@react-navigation/native';
+import { useTransactionStore, type TransactionData, type CategoryTotals } from '../../contexts/TransactionContext';
 
 // Category icon and color mappings
 const categoryIcons: Record<string, { icon: keyof typeof Ionicons.glyphMap; bgColor: string }> = {
@@ -94,30 +76,42 @@ export default function TransactionsScreen() {
   const { current: user } = useUser();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [expenses, setExpenses] = useState<TransactionData[]>([]);
-  const [income, setIncome] = useState<TransactionData[]>([]);
+  const { 
+    expenses: cachedExpenses, 
+    income: cachedIncome, 
+    lastFetched, 
+    setTransactions,
+    shouldRefresh 
+  } = useTransactionStore();
+  const [expenses, setExpenses] = useState<TransactionData[]>(cachedExpenses);
+  const [income, setIncome] = useState<TransactionData[]>(cachedIncome);
   const [expenseTotals, setExpenseTotals] = useState<CategoryTotals>({});
   const [incomeTotals, setIncomeTotals] = useState<CategoryTotals>({});
 
-  const fetchTransactions = async () => {
+  // Initialize with cached data
+  useEffect(() => {
+    if (cachedExpenses.length > 0 || cachedIncome.length > 0) {
+      setExpenses(cachedExpenses);
+      setIncome(cachedIncome);
+      calculateCategoryTotals(cachedExpenses, cachedIncome);
+    }
+  }, []);
+
+  const fetchTransactions = useCallback(async () => {
     if (!user?.$id) {
       setLoading(false);
+      setRefreshing(false);
       return;
     }
 
     try {
-      console.log('Fetching transactions for user:', user.$id);
-
       const [expensesData, incomeData] = await Promise.all([
         ExpenseDB.listByUser(user.$id),
         IncomeDB.listByUser(user.$id)
       ]);
 
-      console.log('Fetched data:', {
-        expenses: expensesData.length,
-        income: incomeData.length
-      });
-
+      // Update both local state and global store
+      setTransactions(expensesData, incomeData);
       setExpenses(expensesData);
       setIncome(incomeData);
       calculateCategoryTotals(expensesData, incomeData);
@@ -126,8 +120,32 @@ export default function TransactionsScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      useTransactionStore.getState().setShouldRefresh(false);
     }
-  };
+  }, [user, calculateCategoryTotals]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.$id) {
+        setLoading(false);
+        return;
+      }
+
+      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+      const cacheExpired = !lastFetched || Date.now() - lastFetched > CACHE_DURATION;
+
+      if (!shouldRefresh && !cacheExpired && (cachedExpenses.length > 0 || cachedIncome.length > 0)) {
+        // Use cached data
+        setExpenses(cachedExpenses);
+        setIncome(cachedIncome);
+        calculateCategoryTotals(cachedExpenses, cachedIncome);
+        setLoading(false);
+        return;
+      }
+
+      fetchTransactions();
+    }, [user, fetchTransactions, cachedExpenses, cachedIncome, lastFetched, shouldRefresh])
+  );
 
   const calculateCategoryTotals = (expensesData: TransactionData[], incomeData: TransactionData[]) => {
     // Calculate totals for expenses
@@ -160,14 +178,10 @@ export default function TransactionsScreen() {
     setIncomeTotals(incomeSums);
   };
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [user]);
-
-  const onRefresh = React.useCallback(() => {
+  const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchTransactions();
-  }, []);
+  }, [fetchTransactions]);
 
   const totalIncome = income.reduce((sum, item) => sum + item.amount, 0);
   const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
