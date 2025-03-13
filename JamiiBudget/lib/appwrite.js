@@ -4,16 +4,16 @@ const client = new Client();
 
 client
   .setEndpoint("https://cloud.appwrite.io/v1")
-  .setProject("671f626b0013b255de95")
+  .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID)
   .setPlatform('jamiibudget');
 
 export const account = new Account(client);
 export const databases = new Databases(client);
 
 // Database and Collection IDs
-export const DATABASE_ID = "67208f64001c3ab4575d";
-export const EXPENSES_COLLECTION_ID = "672092dd000749abf77d";
-export const INCOME_COLLECTION_ID = "672092eb00359460683e";
+export const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID;
+export const EXPENSES_COLLECTION_ID = process.env.EXPO_PUBLIC_APPWRITE_EXPENSES_COLLECTION_ID;
+export const INCOME_COLLECTION_ID = process.env.EXPO_PUBLIC_APPWRITE_INCOME_COLLECTION_ID;
 
 // Collection attribute names - using constants to avoid typos
 export const ATTRIBUTE_NAMES = {
@@ -24,3 +24,5 @@ export const ATTRIBUTE_NAMES = {
   DATE: "date",
   CREATED_AT: "createdAt"
 }
+
+export default client;

@@ -4,6 +4,7 @@ import { Link, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Controller, useForm } from 'react-hook-form';
 import { useUser } from '../../contexts/UserContext';
+import { Image } from 'react-native';
 
 
 // Define the form data type
@@ -47,6 +48,22 @@ export default function SignUp() {
     <View className="flex-1 justify-center bg-white">
     <ScrollView>
       <View className="p-6 h-full justify-center" style={{ minHeight: 700 }}>
+          {/* Logo and Branding Section */}
+          <View className="pt-10 pb-8 px-6">
+            <View className="items-center">
+              <Image 
+                source={require('../../assets/images/logo.png')} 
+                className="w-20 h-20"
+                resizeMode="contain"
+              />
+              <Text className="text-2xl font-bold text-gray-900 mt-4">
+                Jamii Budget
+              </Text>
+              <Text className="text-sm text-gray-500 text-center mt-1">
+                Smart Savings, Brighter Futures
+              </Text>
+            </View>
+          </View>
         {/* Header */}
         <View className="mb-8">
           <Text className="text-3xl font-bold text-gray-800">Create Account</Text>

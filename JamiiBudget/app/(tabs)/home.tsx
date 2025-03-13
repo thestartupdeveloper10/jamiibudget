@@ -174,6 +174,44 @@ export default function Home() {
           </View>
         </View>
 
+{/* Budget Planning Card */}
+<View className="mt-6 mb-4">
+          <View className="bg-gray-50 rounded-xl p-4">
+            <View className="flex-row justify-between items-center mb-4">
+              <View className="flex-row items-center">
+                <View className="w-10 h-10 bg-[#351e1a] rounded-full justify-center items-center mr-3">
+                  <Ionicons name="calculator" size={20} color="white" />
+                </View>
+                <View>
+                  <Text className="text-lg font-semibold text-gray-800">Budget Planner</Text>
+                  <Text className="text-gray-500">Plan your spending wisely</Text>
+                </View>
+              </View>
+              <TouchableOpacity 
+                onPress={() => router.push('/(budget)/planner')}
+                className="bg-[#351e1a] px-4 py-2 rounded-full"
+              >
+                <Text className="text-white font-medium">View</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View className="flex-row justify-between">
+              <View className="items-center flex-1">
+                <Text className="text-gray-500">Needs</Text>
+                <Text className="text-[#351e1a] font-bold">50%</Text>
+              </View>
+              <View className="items-center flex-1">
+                <Text className="text-gray-500">Wants</Text>
+                <Text className="text-[#351e1a] font-bold">30%</Text>
+              </View>
+              <View className="items-center flex-1">
+                <Text className="text-gray-500">Savings</Text>
+                <Text className="text-[#351e1a] font-bold">20%</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Transactions Section */}
         <View className="mt-6">
           <View className="flex-row justify-between items-center mb-4">
@@ -207,6 +245,8 @@ export default function Home() {
             )}
           </View>
         </View>
+
+        
       </ScrollView>
     </SafeAreaView>
   );

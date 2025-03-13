@@ -92,6 +92,13 @@ export default function Add() {
 
   const isValidForm = amount && selectedCategory && description;
 
+  // Modify getCurrentDate to get end of current day
+  const getCurrentDate = () => {
+    const now = new Date();
+    now.setHours(23, 59, 59, 999); // Set to end of current day
+    return now;
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
       <StatusBar style="dark" />
@@ -247,9 +254,18 @@ export default function Add() {
           onChange={(event, selectedDate) => {
             setShowDatePicker(false);
             if (selectedDate) {
-              setDate(selectedDate);
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              tomorrow.setHours(0, 0, 0, 0);
+
+              if (selectedDate < tomorrow) {
+                setDate(selectedDate);
+              } else {
+                Alert.alert('Invalid Date', 'Cannot select future dates');
+              }
             }
           }}
+          maximumDate={getCurrentDate()}
         />
       )}
     </SafeAreaView>

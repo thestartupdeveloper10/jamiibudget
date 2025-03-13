@@ -7,13 +7,29 @@ import { useRouter } from 'expo-router';
 import { useUser } from '../../contexts/UserContext';
 import { ExpenseDB, IncomeDB } from '../../lib/appwriteDb';
 
+// Add these type imports at the top
+type Transaction = {
+  $id: string;
+  amount: number;
+  category: string;
+  description: string;
+  date: string;
+};
+
+// Update the stats type
+type Stats = {
+  totalBalance: number;
+  transactionCount: number;
+  categoriesCount: number;
+};
+
 // Menu items with only the necessary functionality for now
 const menuItems = [
   {
     title: 'Account',
     items: [
-      { id: '1', name: 'Edit Profile', icon: 'person-outline', color: '#2196F3', disabled: true },
-      { id: '2', name: 'Change Password', icon: 'lock-closed-outline', color: '#4CAF50', disabled: true },
+      { id: '1', name: 'Edit Profile', icon: 'person-outline', color: '#2196F3', disabled: false },
+      { id: '2', name: 'Change Password', icon: 'lock-closed-outline', color: '#4CAF50', disabled: false },
     ]
   },
   {
@@ -27,9 +43,10 @@ const menuItems = [
 export default function Profile() {
   const { current: currentUser, logout } = useUser();
   const router = useRouter();
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<Stats>({
     totalBalance: 0,
-    transactionCount: 0
+    transactionCount: 0,
+    categoriesCount: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -41,19 +58,25 @@ export default function Profile() {
       }
 
       try {
-        // Fetch all transactions
         const [expenses, income] = await Promise.all([
           ExpenseDB.listByUser(currentUser.$id),
           IncomeDB.listByUser(currentUser.$id)
         ]);
 
         // Calculate stats
-        const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-        const totalIncome = income.reduce((sum, inc) => sum + inc.amount, 0);
+        const totalExpenses = expenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+        const totalIncome = income.reduce((sum, inc) => sum + (inc.amount || 0), 0);
         
+        // Get unique categories
+        const uniqueCategories = new Set([
+          ...expenses.map(exp => exp.category),
+          ...income.map(inc => inc.category)
+        ]);
+
         setStats({
           totalBalance: totalIncome - totalExpenses,
-          transactionCount: expenses.length + income.length
+          transactionCount: expenses.length + income.length,
+          categoriesCount: uniqueCategories.size
         });
       } catch (error) {
         console.error('Error fetching stats:', error);
@@ -66,12 +89,15 @@ export default function Profile() {
   }, [currentUser]);
 
   const handleMenuItemPress = async (itemId: string, disabled: boolean) => {
-    if (disabled) {
-      // Function not implemented yet
-      return;
-    }
+    if (disabled) return;
 
     switch (itemId) {
+      case '1': // Edit Profile
+        router.push('/(auth)/editProfile');
+        break;
+      case '2': // Change Password
+        router.push('/(auth)/changePassword');
+        break;
       case '3': // Logout
         try {
           await logout();
@@ -80,8 +106,6 @@ export default function Profile() {
           console.error('Error logging out:', error);
         }
         break;
-      default:
-        console.log(`Pressed item ${itemId}`);
     }
   };
 
