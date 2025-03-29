@@ -26,16 +26,37 @@ type Stats = {
 // Menu items with only the necessary functionality for now
 const menuItems = [
   {
-    title: 'Account',
+    title: 'Account Settings',
     items: [
-      { id: '1', name: 'Edit Profile', icon: 'person-outline', color: '#2196F3', disabled: false },
-      { id: '2', name: 'Change Password', icon: 'lock-closed-outline', color: '#4CAF50', disabled: false },
+      { 
+        id: '1', 
+        name: 'Edit Profile', 
+        icon: 'person-outline', 
+        color: '#006D77', 
+        disabled: false,
+        description: 'Update your personal information'
+      },
+      { 
+        id: '2', 
+        name: 'Change Password', 
+        icon: 'lock-closed-outline', 
+        color: '#2A9D8F', 
+        disabled: false,
+        description: 'Manage your account security'
+      },
     ]
   },
   {
-    title: 'Other',
+    title: 'App Settings',
     items: [
-      { id: '3', name: 'Log Out', icon: 'log-out-outline', color: '#F44336', disabled: false },
+      { 
+        id: '3', 
+        name: 'Log Out', 
+        icon: 'log-out-outline', 
+        color: '#E76F51', 
+        disabled: false,
+        description: 'Sign out of your account'
+      },
     ]
   }
 ];
@@ -121,84 +142,107 @@ export default function Profile() {
       <StatusBar style="dark" />
       
       {/* Header */}
-      <View className="px-4 py-6 bg-white">
-        <Text className="text-2xl font-bold text-gray-800">Profile</Text>
+      <View className="px-4 pt-6 pb-4 bg-white border-b border-gray-100">
+        <Text className="text-2xl font-bold text-gray-900">Profile</Text>
       </View>
 
       <ScrollView className="flex-1">
         {/* Profile Card */}
-        <View className="bg-white p-4 mb-6">
+        <View className="bg-white mt-6 mx-4 p-6 rounded-2xl shadow-sm">
           <View className="flex-row items-center">
-            <Image
-              source={{ uri: 'https://via.placeholder.com/100' }}
-              className="w-20 h-20 rounded-full"
-            />
+            <View className="relative">
+              <Image
+                source={{ uri: 'https://via.placeholder.com/100' }}
+                className="w-20 h-20 rounded-full"
+              />
+              <View className="absolute bottom-0 right-0 bg-[#006D77] w-6 h-6 rounded-full items-center justify-center">
+                <Ionicons name="camera-outline" size={16} color="white" />
+              </View>
+            </View>
             <View className="ml-4 flex-1">
-              <Text className="text-xl font-bold text-gray-800">{currentUser?.name}</Text>
-              <Text className="text-gray-500">{currentUser?.email}</Text>
+              <Text className="text-xl font-bold text-gray-900">{currentUser?.name}</Text>
+              <Text className="text-gray-500 mb-2">{currentUser?.email}</Text>
               <TouchableOpacity 
-                className="bg-[#351e1a] self-start px-4 py-2 rounded-full mt-2 opacity-50"
-                disabled={true}
+                className="bg-[#006D77]/10 self-start px-4 py-2 rounded-full"
+                onPress={() => router.push('/(auth)/editProfile')}
               >
-                <Text className="text-white font-medium">Edit Profile</Text>
+                <Text className="text-[#006D77] font-medium">Edit Profile</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Stats Row */}
-          <View className="flex-row justify-between mt-6 pt-6 border-t border-gray-100">
-            <View className="items-center">
-              <Text className="text-2xl font-bold text-[#8e5347]">
+          {/* Stats Cards */}
+          <View className="flex-row mt-8 gap-4">
+            <View className="flex-1 bg-[#006D77]/5 p-4 rounded-xl">
+              <View className="w-10 h-10 bg-[#006D77]/10 rounded-full items-center justify-center mb-2">
+                <Ionicons name="wallet-outline" size={20} color="#006D77" />
+              </View>
+              <Text className="text-2xl font-bold text-[#006D77]">
                 {loading ? '...' : formatAmount(stats.totalBalance)}
               </Text>
-              <Text className="text-gray-500">Total Balance</Text>
+              <Text className="text-gray-600">Balance</Text>
             </View>
-            <View className="items-center">
-              <Text className="text-2xl font-bold text-[#8e5347]">
+            
+            <View className="flex-1 bg-[#2A9D8F]/5 p-4 rounded-xl">
+              <View className="w-10 h-10 bg-[#2A9D8F]/10 rounded-full items-center justify-center mb-2">
+                <Ionicons name="swap-horizontal-outline" size={20} color="#2A9D8F" />
+              </View>
+              <Text className="text-2xl font-bold text-[#2A9D8F]">
                 {loading ? '...' : stats.transactionCount}
               </Text>
-              <Text className="text-gray-500">Transactions</Text>
-            </View>
-            <View className="items-center">
-              <Text className="text-2xl font-bold text-[#8e5347]">11</Text>
-              <Text className="text-gray-500">Categories</Text>
+              <Text className="text-gray-600">Transactions</Text>
             </View>
           </View>
         </View>
 
         {/* Menu Sections */}
         {menuItems.map((section) => (
-          <View key={section.title} className="px-4 mb-6">
-            <Text className="text-gray-500 mb-2 ml-1">{section.title}</Text>
-            {section.items.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                onPress={() => handleMenuItemPress(item.id, item.disabled)}
-                className={`mb-2 ${item.disabled ? 'opacity-50' : ''}`}
-                disabled={item.disabled}
-              >
-                <View
-                  className="flex-row items-center justify-between p-4 bg-white rounded-xl"
+          <View key={section.title} className="mt-8 px-4">
+            <Text className="text-sm font-medium text-gray-500 mb-3 px-1">
+              {section.title}
+            </Text>
+            <View className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              {section.items.map((item, index) => (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => handleMenuItemPress(item.id, item.disabled)}
+                  disabled={item.disabled}
                 >
-                  <View className="flex-row items-center">
-                    <View 
-                      className="w-8 h-8 rounded-full items-center justify-center mr-3"
-                      style={{ backgroundColor: `${item.color}20` }}
-                    >
-                      <Ionicons name={item.icon as any} size={20} color={item.color} />
+                  <View className={`p-4 flex-row items-center justify-between
+                    ${index !== section.items.length - 1 ? 'border-b border-gray-100' : ''}`}
+                  >
+                    <View className="flex-row items-center flex-1">
+                      <View 
+                        className="w-10 h-10 rounded-full items-center justify-center mr-4"
+                        style={{ backgroundColor: `${item.color}15` }}
+                      >
+                        <Ionicons name={item.icon as any} size={20} color={item.color} />
+                      </View>
+                      <View>
+                        <Text className="text-gray-900 font-medium mb-0.5">{item.name}</Text>
+                        <Text className="text-gray-500 text-sm">{item.description}</Text>
+                      </View>
                     </View>
-                    <Text className="text-gray-800 font-medium">{item.name}</Text>
+                    <Ionicons 
+                      name="chevron-forward" 
+                      size={20} 
+                      color="#9CA3AF"
+                      style={{ opacity: item.disabled ? 0.5 : 1 }} 
+                    />
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color="gray" />
-                </View>
-              </TouchableOpacity>
-            ))}
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         ))}
 
-        {/* App Version */}
-        <View className="items-center pb-8">
-          <Text className="text-gray-400">Version 1.0.0</Text>
+        {/* App Info */}
+        <View className="mt-8 mb-8 items-center">
+          <Image 
+            source={require('../../assets/images/logo.png')}
+            className="w-12 h-12 mb-2 opacity-50"
+          />
+          <Text className="text-gray-400 text-sm">Version 1.0.0</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

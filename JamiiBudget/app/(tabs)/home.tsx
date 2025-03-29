@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image, Dimensions, RefreshControl } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { Link, useRouter } from 'expo-router';
 import { useUser } from '../../contexts/UserContext';
 import { ExpenseDB, IncomeDB } from '../../lib/appwriteDb';
 import { useFocusEffect } from '@react-navigation/native';
+
 
 // Define the transaction type based on your database structure
 type Transaction = {
@@ -35,12 +36,20 @@ const categoryIcons = {
   other: { icon: 'ellipsis-horizontal', bgColor: '#EFEBE9', color: '#795548' }
 };
 
+// Add Quick Actions for the home screen
+const QuickActions = [
+  { id: 1, name: 'Add Income', icon: 'arrow-up-circle', color: '#4CAF50' },
+  { id: 2, name: 'Add Expense', icon: 'arrow-down-circle', color: '#FF6B6B' },
+  { id: 3, name: 'View\nStats', icon: 'stats-chart', color: '#2196F3' },
+];
+
 export default function Home() {
   const { current: user } = useUser();
   const [expenses, setExpenses] = useState<Transaction[]>([]);
   const [income, setIncome] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [refreshing, setRefreshing] = React.useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -66,7 +75,7 @@ export default function Home() {
     }, [user])
   );
 
-  // Calculate totals
+  // Calculate totals from expenses and income arrays
   const totalIncome = income.reduce((sum, item) => sum + item.amount, 0);
   const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
   const totalBalance = totalIncome - totalExpenses;
@@ -108,6 +117,23 @@ export default function Home() {
     })}`;
   };
 
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    if (user?.$id) {
+      try {
+        const [expenseData, incomeData] = await Promise.all([
+          ExpenseDB.listByUser(user.$id),
+          IncomeDB.listByUser(user.$id)
+        ]);
+        setExpenses(expenseData as Transaction[]);
+        setIncome(incomeData as Transaction[]);
+      } catch (error) {
+        console.error('Error refreshing transactions:', error);
+      }
+    }
+    setRefreshing(false);
+  }, [user]);
+
   if (loading) {
     return (
       <View className="flex-1 justify-center items-center bg-white">
@@ -117,114 +143,159 @@ export default function Home() {
     );
   }
 
+  console.log('balance', totalBalance);
+  console.log('income', totalIncome);
+  console.log('expense', totalExpenses);
+
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-white">
       <StatusBar style="dark" />
-      <ScrollView className="flex-1 px-4">
-        {/* Header Section */}
-        <View className="flex-row justify-between items-center mt-4">
+      
+      {/* Header Section */}
+      <View className="px-4 pt-4">
+        <View className="flex-row justify-between items-center">
           <View className="flex-row items-center space-x-3">
-            <View className="w-12 h-12 bg-yellow-100 rounded-full justify-center items-center">
-              <Ionicons name="person" size={24} color="#FFB74D" />
+            <View className="w-12 h-12 bg-teal-50 rounded-full items-center justify-center">
+              <Ionicons name="person" size={24} color="#006D77" />
             </View>
-            <Link href='/(tabs)/profile'>
-              <View className='px-3'>
-                <Text className="text-gray-400 text-sm font-bold">Welcome!</Text>
-                <Text className="text-gray-800 text-lg font-bold">{user?.name}</Text>
-              </View>
-            </Link>
+            <View>
+              <Text className="text-gray-500 text-sm">Welcome back</Text>
+              <Text className="text-xl font-semibold text-gray-900">
+                {user?.name || 'User'}
+              </Text>
+            </View>
           </View>
-          <TouchableOpacity>
-            <Link href='(tabs)/profile'>
-              <View className="w-10 h-10 bg-gray-50 rounded-full justify-center items-center">
-                <Ionicons name="settings-outline" size={20} color="#666" />
-              </View>
-            </Link>
+          <TouchableOpacity 
+            onPress={() => router.push('/profile')}
+            className="w-10 h-10 bg-gray-50 rounded-full items-center justify-center"
+          >
+            <Ionicons name="settings-outline" size={20} color="#666" />
           </TouchableOpacity>
         </View>
 
         {/* Balance Card */}
-        <View className='rounded-md bg-[#351e1a] mt-6 p-4'>
-          <View className='flex justify-center items-center'>
-            <Text className="text-white text-lg mb-2 font-bold">Total Balance</Text>
-            <Text className="text-white text-3xl font-bold">{formatAmount(totalBalance)}</Text>
-          </View>
-
-          {/* Income/Expenses Row */}
-          <View className="flex-row justify-between mt-6">
-            <View className="flex-row items-center">
-              <View className="w-8 h-8 bg-white/20 rounded-full justify-center items-center mr-2">
-                <Ionicons name="arrow-down" size={20} color="white" />
-              </View>
-              <View>
-                <Text className="text-white text-sm font-semibold">Income</Text>
-                <Text className="text-white font-bold">{formatAmount(totalIncome)}</Text>
-              </View>
+        <View className="mt-6 bg-[#006D77] p-6 rounded-2xl">
+          <Text className="text-white/80 mb-1">Available Balance</Text>
+          <Text className="text-white text-3xl font-bold mb-4">
+            {formatAmount(totalBalance)}
+          </Text>
+          
+          <View className="flex-row justify-between">
+            <View>
+              <Text className="text-white/80 text-sm">Income</Text>
+              <Text className="text-white font-semibold">
+                {formatAmount(totalIncome)}
+              </Text>
             </View>
-
-            <View className="flex-row items-center">
-              <View className="w-8 h-8 bg-white/20 rounded-full justify-center items-center mr-2">
-                <Ionicons name="arrow-up" size={20} color="white" />
-              </View>
-              <View>
-                <Text className="text-white text-sm font-semibold">Expenses</Text>
-                <Text className="text-white font-bold">{formatAmount(totalExpenses)}</Text>
-              </View>
+            <View>
+              <Text className="text-white/80 text-sm">Expenses</Text>
+              <Text className="text-white font-semibold">
+                {formatAmount(totalExpenses)}
+              </Text>
             </View>
           </View>
         </View>
+      </View>
 
-{/* Budget Planning Card */}
-<View className="mt-6 mb-4">
-          <View className="bg-gray-50 rounded-xl p-4">
-            <View className="flex-row justify-between items-center mb-4">
-              <View className="flex-row items-center">
-                <View className="w-10 h-10 bg-[#351e1a] rounded-full justify-center items-center mr-3">
-                  <Ionicons name="calculator" size={20} color="white" />
-                </View>
-                <View>
-                  <Text className="text-lg font-semibold text-gray-800">Budget Planner</Text>
-                  <Text className="text-gray-500">Plan your spending wisely</Text>
-                </View>
-              </View>
-              <TouchableOpacity 
-                onPress={() => router.push('/(budget)/planner')}
-                className="bg-[#351e1a] px-4 py-2 rounded-full"
+      {/* Quick Actions */}
+      <View className="mt-6 px-4">
+        <Text className="text-lg font-semibold text-gray-900 mb-4">
+          Quick Actions
+        </Text>
+        <View className="flex-row justify-between">
+          {QuickActions.map(action => (
+            <TouchableOpacity
+              key={action.id}
+              onPress={() => router.push('/add')}
+              className="bg-gray-50 w-[31%] p-4 rounded-xl items-center"
+            >
+              <View 
+                className="w-12 h-12 rounded-full items-center justify-center mb-2"
+                style={{ backgroundColor: `${action.color}15` }}
               >
-                <Text className="text-white font-medium">View</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View className="flex-row justify-between">
-              <View className="items-center flex-1">
-                <Text className="text-gray-500">Needs</Text>
-                <Text className="text-[#351e1a] font-bold">50%</Text>
+                <Ionicons name={action.icon} size={24} color={action.color} />
               </View>
-              <View className="items-center flex-1">
-                <Text className="text-gray-500">Wants</Text>
-                <Text className="text-[#351e1a] font-bold">30%</Text>
-              </View>
-              <View className="items-center flex-1">
-                <Text className="text-gray-500">Savings</Text>
-                <Text className="text-[#351e1a] font-bold">20%</Text>
-              </View>
-            </View>
-          </View>
+              <Text className="text-center text-sm text-gray-600">
+                {action.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      </View>
 
-        {/* Transactions Section */}
-        <View className="mt-6">
+      {/* Budget Section */}
+      <View className="mt-6 px-4">
+        <View className="bg-gray-50 p-4 rounded-xl">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="text-gray-800 text-lg font-semibold">Latest Transactions</Text>
-            <TouchableOpacity onPress={() => router.push('/(transactions)/all')}>
-              <Text className="text-[#643f38]">View All</Text>
+            <View className="flex-row items-center">
+              <View className="w-10 h-10 bg-[#006D77] rounded-full items-center justify-center mr-3">
+                <Ionicons name="pie-chart" size={20} color="white" />
+              </View>
+              <View>
+                <Text className="text-base font-semibold">Budget Status</Text>
+                <Text className="text-sm text-gray-500">Monthly planning</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push('/(budget)/planner')}
+            >
+              <Text className="text-[#006D77] font-medium">Details</Text>
             </TouchableOpacity>
           </View>
-          <View className='gap-4'>
-            {allTransactions.length === 0 ? (
-              <Text className="text-gray-500 text-center py-4">No transactions yet</Text>
-            ) : (
-              allTransactions.map(transaction => {
+
+          <View className="flex-row justify-between">
+            <View className="items-center">
+              <Text className="text-gray-500 mb-1">Needs</Text>
+              <Text className="text-lg font-semibold text-[#006D77]">50%</Text>
+            </View>
+            <View className="items-center">
+              <Text className="text-gray-500 mb-1">Wants</Text>
+              <Text className="text-lg font-semibold text-[#006D77]">30%</Text>
+            </View>
+            <View className="items-center">
+              <Text className="text-gray-500 mb-1">Savings</Text>
+              <Text className="text-lg font-semibold text-[#006D77]">20%</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Recent Transactions */}
+      <View className="flex-1 mt-6">
+        <View className="px-4 flex-row justify-between items-center mb-4">
+          <Text className="text-lg font-semibold text-gray-900">
+            Recent Activity
+          </Text>
+          <TouchableOpacity onPress={() => router.push('/(transactions)/all')}>
+            <Text className="text-[#006D77]">See All</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView 
+          className="px-4"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {allTransactions.length === 0 ? (
+            <View className="py-8 items-center">
+              <Image 
+                source={require('../../assets/images/logo.png')}
+                className="w-32 h-32 mb-4 opacity-50"
+              />
+              <Text className="text-gray-500 text-center">
+                No transactions yet
+              </Text>
+              <TouchableOpacity 
+                onPress={() => router.push('/add')}
+                className="mt-4 bg-[#006D77] px-6 py-3 rounded-full"
+              >
+                <Text className="text-white font-medium">Add Transaction</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View className="space-y-3">
+              {allTransactions.map(transaction => {
                 const category = transaction.category.toLowerCase();
                 const iconConfig = categoryIcons[category as keyof typeof categoryIcons] || categoryIcons.other;
                 const isExpense = expenses.some(exp => exp.$id === transaction.$id);
@@ -232,7 +303,7 @@ export default function Home() {
                 return (
                   <TransactionItem
                     key={transaction.$id}
-                    icon={iconConfig.icon}
+                    icon={iconConfig.icon as any}
                     iconBgColor={iconConfig.bgColor}
                     iconColor={iconConfig.color}
                     title={transaction.category}
@@ -241,13 +312,11 @@ export default function Home() {
                     onPress={() => router.push(`/(transactions)/${transaction.$id}`)}
                   />
                 );
-              })
-            )}
-          </View>
-        </View>
-
-        
-      </ScrollView>
+              })}
+            </View>
+          )}
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }

@@ -2,7 +2,7 @@
   "expo": {
     "name": "JamiiBudget",
     "slug": "JamiiBudget",
-     "scheme": "JamiiBudget",
+    "scheme": "JamiiBudget",
     "version": "1.0.0",
     "orientation": "portrait",
     "newArchEnabled": true,
@@ -20,14 +20,23 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.cliffe.JamiiBudget"
     },
     "web": {
       "favicon": "./assets/images/logo.png",
-       "bundler": "metro"
+      "bundler": "metro"
     },
     "plugins": [
       "expo-router"
-    ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "ca1ac9f9-7dcc-4d17-9ba2-cc0a242d775f"
+      }
+    }
   }
 }

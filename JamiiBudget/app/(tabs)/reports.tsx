@@ -24,14 +24,34 @@ import { useTransactionStore, type TransactionData } from '../../contexts/Transa
 const screenWidth = Dimensions.get('window').width;
 
 const chartConfig = {
+  backgroundColor: '#ffffff',
   backgroundGradientFrom: '#ffffff',
   backgroundGradientTo: '#ffffff',
-  color: (opacity = 1) => `rgba(142, 83, 71, ${opacity})`,
-  strokeWidth: 2,
-  barPercentage: 0.7,
   decimalPlaces: 0,
-  useShadowColorFromDataset: false,
+  color: (opacity = 1) => `rgba(0, 109, 119, ${opacity})`,
+  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  style: {
+    borderRadius: 16,
+  },
+  propsForDots: {
+    r: '6',
+    strokeWidth: '2',
+    stroke: '#006D77'
+  }
 };
+
+const categoryColors = [
+  '#006D77', // Primary
+  '#2A9D8F',
+  '#E9C46A',
+  '#F4A261',
+  '#E76F51',
+  '#83C5BE',
+  '#FFDDD2',
+  '#E29578',
+  '#006466',
+  '#144552',
+];
 
 const formatCurrency = (amount: number) => {
   return `KES ${amount.toLocaleString('en-US', {
@@ -178,15 +198,10 @@ export default function Reports() {
       return acc;
     }, {} as Record<string, number>);
 
-    const colors = [
-      '#FF9800', '#2196F3', '#4CAF50', '#F44336', '#9C27B0',
-      '#795548', '#607D8B', '#E91E63', '#9E9E9E'
-    ];
-
     return Object.entries(categoryTotals).map(([name, amount], index) => ({
       name,
       amount,
-      color: colors[index % colors.length],
+      color: categoryColors[index % categoryColors.length],
       legendFontColor: '#7F7F7F',
       legendFontSize: 12,
     }));
@@ -393,48 +408,72 @@ export default function Reports() {
     <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <StatusBar style="dark" />
       
-      {/* Header with Download Button */}
-      <View className="px-4 py-6 border-b border-gray-100 flex-row justify-between items-center">
-        <Text className="text-2xl font-bold text-gray-800">Financial Reports</Text>
-        <TouchableOpacity 
-          onPress={handleDownload}
-          disabled={downloading || expenses.length === 0}
-          className={`flex-row items-center px-4 py-2 rounded-full ${
-            downloading || expenses.length === 0 ? 'bg-gray-300' : 'bg-[#8e5347]'
-          }`}
-        >
-          {downloading ? (
-            <ActivityIndicator size="small" color="white" />
-          ) : (
-            <>
-              <Ionicons name="download-outline" size={20} color="white" />
-              <Text className="text-white ml-2 font-medium">Download</Text>
-            </>
-          )}
-        </TouchableOpacity>
+      {/* Header */}
+      <View className="px-4 pt-6 pb-4 border-b border-gray-100">
+        <View className="flex-row justify-between items-center">
+          <Text className="text-2xl font-bold text-gray-900">Reports</Text>
+          <TouchableOpacity 
+            onPress={handleDownload}
+            disabled={downloading || expenses.length === 0}
+            className={`flex-row items-center px-4 py-2 rounded-full ${
+              downloading || expenses.length === 0 ? 'bg-gray-200' : 'bg-[#006D77]'
+            }`}
+          >
+            {downloading ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <>
+                <Ionicons name="cloud-download-outline" size={20} color="white" />
+                <Text className="text-white ml-2 font-medium">Export PDF</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView 
-        className="flex-1 p-4"
+        className="flex-1"
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#8e5347']}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#006D77']} />
         }
       >
         {expenses.length === 0 && income.length === 0 ? (
-          <View className="flex-1 justify-center items-center py-8">
-            <Ionicons name="document-text-outline" size={48} color="#8e5347" />
-            <Text className="text-gray-500 mt-4 text-center">
-              No transaction data available for the last 6 months
+          <View className="flex-1 justify-center items-center py-20">
+            <View className="w-20 h-20 bg-gray-100 rounded-full items-center justify-center mb-4">
+              <Ionicons name="analytics-outline" size={32} color="#9CA3AF" />
+            </View>
+            <Text className="text-gray-500 text-center text-lg mb-2">No Data Available</Text>
+            <Text className="text-gray-400 text-center px-8">
+              Start adding transactions to see your financial reports
             </Text>
           </View>
         ) : (
-          <>
-            {/* Monthly Overview */}
-            <View className="mb-8">
+          <View className="p-4">
+            {/* Summary Cards */}
+            <View className="flex-row gap-4 mb-6">
+              <View className="flex-1 bg-green-50 p-4 rounded-2xl">
+                <View className="w-10 h-10 bg-green-100 rounded-full items-center justify-center mb-2">
+                  <Ionicons name="arrow-up" size={20} color="#4CAF50" />
+                </View>
+                <Text className="text-gray-600 text-sm">Total Income</Text>
+                <Text className="text-lg font-semibold text-gray-900">
+                  {formatCurrency(income.reduce((sum, i) => sum + i.amount, 0))}
+                </Text>
+              </View>
+              
+              <View className="flex-1 bg-red-50 p-4 rounded-2xl">
+                <View className="w-10 h-10 bg-red-100 rounded-full items-center justify-center mb-2">
+                  <Ionicons name="arrow-down" size={20} color="#F44336" />
+                </View>
+                <Text className="text-gray-600 text-sm">Total Expenses</Text>
+                <Text className="text-lg font-semibold text-gray-900">
+                  {formatCurrency(expenses.reduce((sum, e) => sum + e.amount, 0))}
+                </Text>
+              </View>
+            </View>
+
+            {/* Monthly Overview Chart */}
+            <View className="bg-white rounded-2xl p-4 mb-6 shadow-sm">
               <Text className="text-lg font-semibold mb-4">Monthly Overview</Text>
               <LineChart
                 data={{
@@ -451,88 +490,79 @@ export default function Reports() {
                       strokeWidth: 2,
                     },
                   ],
-                  legend: ['Expenses', 'Income'],
+                  legend: ['Expenses', 'Income']
                 }}
-                width={screenWidth - 32}
+                width={screenWidth - 48}
                 height={220}
                 chartConfig={chartConfig}
                 bezier
                 style={{
                   marginVertical: 8,
-                  borderRadius: 16,
+                  borderRadius: 16
                 }}
               />
             </View>
 
-            {/* Expense by Category */}
+            {/* Expense Categories */}
             {categoryData.length > 0 && (
-              <View className="mb-8">
-                <Text className="text-lg font-semibold mb-4">Expenses by Category</Text>
+              <View className="bg-white rounded-2xl p-4 mb-6 shadow-sm">
+                <Text className="text-lg font-semibold mb-4">Expense Breakdown</Text>
                 <PieChart
-                  data={categoryData}
-                  width={screenWidth - 32}
+                  data={categoryData.map((item, index) => ({
+                    ...item,
+                    color: categoryColors[index % categoryColors.length]
+                  }))}
+                  width={screenWidth - 48}
                   height={220}
                   chartConfig={chartConfig}
                   accessor="amount"
                   backgroundColor="transparent"
                   paddingLeft="15"
-                  center={[10, 10]}
                   absolute
                 />
+                
+                {/* Category Legend */}
+                <View className="mt-4 space-y-2">
+                  {categoryData.map((cat, index) => (
+                    <View key={cat.name} className="flex-row items-center justify-between">
+                      <View className="flex-row items-center">
+                        <View 
+                          style={{ backgroundColor: categoryColors[index % categoryColors.length] }}
+                          className="w-3 h-3 rounded-full mr-2"
+                        />
+                        <Text className="text-gray-700 capitalize">{cat.name}</Text>
+                      </View>
+                      <Text className="text-gray-600">
+                        {((cat.amount / expenses.reduce((sum, e) => sum + e.amount, 0)) * 100).toFixed(1)}%
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             )}
 
             {/* Monthly Comparison */}
-            <View className="mb-8">
+            <View className="bg-white rounded-2xl p-4 shadow-sm">
               <Text className="text-lg font-semibold mb-4">Monthly Expenses</Text>
               <BarChart
                 data={{
                   labels: monthLabels,
-                  datasets: [
-                    {
-                      data: expenseData,
-                    },
-                  ],
+                  datasets: [{ data: expenseData }]
                 }}
-                width={screenWidth - 32}
+                width={screenWidth - 48}
                 height={220}
                 yAxisLabel="KES "
-                chartConfig={chartConfig}
+                chartConfig={{
+                  ...chartConfig,
+                  color: (opacity = 1) => `rgba(0, 109, 119, ${opacity})`
+                }}
                 style={{
                   marginVertical: 8,
-                  borderRadius: 16,
+                  borderRadius: 16
                 }}
               />
             </View>
-
-            {/* Summary Statistics */}
-            <View className="bg-gray-50 p-4 rounded-xl mb-8">
-              <Text className="text-lg font-semibold mb-4">Summary</Text>
-              <View className="space-y-3">
-                <View className="flex-row justify-between">
-                  <Text className="text-gray-600">Total Income</Text>
-                  <Text className="font-semibold text-green-600">
-                    {formatCurrency(income.reduce((sum, i) => sum + i.amount, 0))}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between">
-                  <Text className="text-gray-600">Total Expenses</Text>
-                  <Text className="font-semibold text-red-600">
-                    {formatCurrency(expenses.reduce((sum, e) => sum + e.amount, 0))}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between pt-2 border-t border-gray-200">
-                  <Text className="text-gray-600">Net Savings</Text>
-                  <Text className="font-semibold text-[#8e5347]">
-                    {formatCurrency(
-                      income.reduce((sum, i) => sum + i.amount, 0) -
-                      expenses.reduce((sum, e) => sum + e.amount, 0)
-                    )}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>

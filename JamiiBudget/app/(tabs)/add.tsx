@@ -1,14 +1,25 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, Pressable, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  TextInput, 
+  TouchableOpacity, 
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ExpenseDB, IncomeDB } from '../../lib/appwriteDb';
 import { useUser } from '../../contexts/UserContext';
-import { useTransactionStore, type TransactionData } from '../../contexts/TransactionContext';
+import { useTransactionStore } from '../../contexts/TransactionContext';
+import { useRouter } from 'expo-router';
 
+// Move the categories and QuickAmounts outside the component to prevent re-creation
 const categories = {
   expense: [
     { id: '1', name: 'Food', icon: 'fast-food', color: '#FF9800' },
@@ -28,32 +39,85 @@ const categories = {
   ]
 };
 
+const QuickAmounts = [
+  { amount: 100, label: '100' },
+  { amount: 500, label: '500' },
+  { amount: 1000, label: '1K' },
+  { amount: 2000, label: '2K' },
+  { amount: 5000, label: '5K' },
+  { amount: 10000, label: '10K' },
+];
+
 export default function Add() {
   const router = useRouter();
+  // Custom hook for navigation to avoid using router directly
+  const useCustomNavigation = () => {
+    const navigateHome = useCallback(() => {
+      router.navigate('/home')
+    }, []);
+
+    return { navigateHome };
+  };
+
+  const { navigateHome } = useCustomNavigation();
   const { current: user } = useUser();
-  const [type, setType] = useState<'expense' | 'income'>('expense');
-  const [amount, setAmount] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date());
+  
+  // Transaction type state (use string for simplicity)
+  const [transactionType, setTransactionType] = useState('expense');
+  
+  // Form values
+  const [formValues, setFormValues] = useState({
+    amount: '',
+    categoryId: '',
+    description: '',
+    date: new Date(),
+  });
+  
+  // UI states
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { setShouldRefresh } = useTransactionStore();
 
-  const currentCategories = categories[type];
+  // Derived values
+  const currentCategories = categories[transactionType] || categories.expense;
+  const selectedCategory = currentCategories.find(cat => cat.id === formValues.categoryId);
 
-  const selectedCategoryDetails = currentCategories.find(cat => cat.id === selectedCategory);
+  // Memoized handlers to prevent recreation on each render
+  const handleFormChange = useCallback((field, value) => {
+    setFormValues(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
 
-  const resetForm = () => {
-    setAmount('');
-    setSelectedCategory('');
-    setDescription('');
-    setDate(new Date());
-    setType('expense');
-  };
+  const handleTypeChange = useCallback((newType) => {
+    setTransactionType(newType);
+    // Reset category when changing types as they have different category sets
+    setFormValues(prev => ({
+      ...prev,
+      categoryId: ''
+    }));
+  }, []);
 
-  const handleSave = async () => {
-    if (!amount || !selectedCategory || !description) {
+  const resetForm = useCallback(() => {
+    setTransactionType('expense');
+    setFormValues({
+      amount: '',
+      categoryId: '',
+      description: '',
+      date: new Date(),
+    });
+  }, []);
+
+  const getCurrentDate = useCallback(() => {
+    const now = new Date();
+    now.setHours(23, 59, 59, 999);
+    return now;
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    // Form validation
+    if (!formValues.amount || !formValues.categoryId || !formValues.description) {
       Alert.alert('Missing Fields', 'Please fill in all required fields');
       return;
     }
@@ -64,16 +128,18 @@ export default function Add() {
     }
 
     setIsSubmitting(true);
+    
     try {
       const data = {
         userId: user.$id,
-        amount: parseFloat(amount),
-        category: selectedCategoryDetails?.name.toLowerCase() || '',
-        description,
-        date: date.toISOString(),
+        amount: parseFloat(formValues.amount),
+        category: selectedCategory?.name.toLowerCase() || '',
+        description: formValues.description,
+        date: formValues.date.toISOString(),
       };
 
-      if (type === 'expense') {
+      // Save to appropriate database
+      if (transactionType === 'expense') {
         await ExpenseDB.create(data);
       } else {
         await IncomeDB.create(data);
@@ -81,175 +147,205 @@ export default function Add() {
 
       setShouldRefresh(true);
       resetForm();
-      router.push('/home');
+      
+      // Navigate home
+      navigateHome();
     } catch (error) {
       console.error('Error saving transaction:', error);
       Alert.alert('Error', 'Failed to save transaction. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formValues, transactionType, user, selectedCategory, navigateHome, resetForm, setShouldRefresh]);
 
-  const isValidForm = amount && selectedCategory && description;
-
-  // Modify getCurrentDate to get end of current day
-  const getCurrentDate = () => {
-    const now = new Date();
-    now.setHours(23, 59, 59, 999); // Set to end of current day
-    return now;
-  };
-
-  return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
-      <StatusBar style="dark" />
-      
-      {/* Header */}
-      <View className="bg-white">
-        <View className="flex-row justify-between items-center px-4 py-4">
-          <Pressable 
-            onPress={() => router.push('/(tabs)')}
-            className="w-10 h-10 items-center justify-center rounded-full bg-gray-100"
-          >
-            <Ionicons name="chevron-back" size={24} color="black" />
-          </Pressable>
-          <Text className="text-xl font-semibold">New {type}</Text>
-          <Pressable 
-            onPress={handleSave}
-            disabled={!isValidForm || isSubmitting}
-            className={`px-4 py-2 rounded-full ${isValidForm ? 'bg-blue-500' : 'bg-gray-300'}`}
-          >
-            <Text className="text-white font-medium">
-              {isSubmitting ? 'Saving...' : 'Save'}
-            </Text>
-          </Pressable>
+  // Render category items - memoized to prevent unnecessary re-renders
+  const renderCategoryItems = useCallback(() => {
+    return currentCategories.map(cat => (
+      <TouchableOpacity
+        key={cat.id}
+        className={`py-3 px-4 rounded-xl flex-row items-center
+          ${formValues.categoryId === cat.id ? 'bg-[#006D77]/10' : 'bg-gray-50'}`}
+        onPress={() => handleFormChange('categoryId', cat.id)}
+      >
+        <View 
+          className={`w-8 h-8 rounded-full items-center justify-center mr-2
+            ${formValues.categoryId === cat.id ? 'bg-[#006D77]' : 'bg-gray-200'}`}
+        >
+          <Ionicons 
+            name={cat.icon} 
+            size={16} 
+            color={formValues.categoryId === cat.id ? 'white' : '#666'} 
+          />
         </View>
+        <Text className={`font-medium
+          ${formValues.categoryId === cat.id ? 'text-[#006D77]' : 'text-gray-700'}`}>
+          {cat.name}
+        </Text>
+      </TouchableOpacity>
+    ));
+  }, [currentCategories, formValues.categoryId, handleFormChange]);
 
-        {/* Amount Input */}
-        <View className="px-4 py-6 border-t border-gray-100">
-          <View className="flex-row items-center justify-center">
-            <Text className="text-3xl font-bold mr-2">KES</Text>
-            <TextInput
-              className="text-4xl font-bold text-center w-48"
-              keyboardType="decimal-pad"
-              placeholder="0.00"
-              value={amount}
-              onChangeText={setAmount}
-            />
-          </View>
-        </View>
+  // Split UI into small, focused components
+  const Header = () => (
+    <View className="px-4 py-4 border-b border-gray-100">
+      <View className="flex-row items-center">
+        <TouchableOpacity onPress={navigateHome}>
+          <Ionicons name="close" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text className="text-xl pl-36 font-semibold">
+          {transactionType === 'expense' ? 'Add Expense' : 'Add Income'}
+        </Text>
+      </View>
+    </View>
+  );
 
-        {/* Transaction Type Pills */}
-        <View className="flex-row px-4 pb-4">
-          <Pressable 
-            className={`flex-1 p-3 rounded-xl mr-2 ${
-              type === 'expense' ? 'bg-red-100' : 'bg-gray-100'
-            }`}
-            onPress={() => setType('expense')}
-          >
-            <View className="flex-row items-center justify-center">
-              <Ionicons 
-                name="arrow-down-circle" 
-                size={20} 
-                color={type === 'expense' ? '#EF4444' : '#6B7280'} 
-              />
-              <Text className={`ml-2 font-medium ${
-                type === 'expense' ? 'text-red-500' : 'text-gray-500'
-              }`}>
-                Expense
-              </Text>
-            </View>
-          </Pressable>
-          <Pressable 
-            className={`flex-1 p-3 rounded-xl ${
-              type === 'income' ? 'bg-green-100' : 'bg-gray-100'
-            }`}
-            onPress={() => setType('income')}
-          >
-            <View className="flex-row items-center justify-center">
-              <Ionicons 
-                name="arrow-up-circle" 
-                size={20} 
-                color={type === 'income' ? '#10B981' : '#6B7280'} 
-              />
-              <Text className={`ml-2 font-medium ${
-                type === 'income' ? 'text-green-500' : 'text-gray-500'
-              }`}>
-                Income
-              </Text>
-            </View>
-          </Pressable>
-        </View>
+  const TypeSelector = () => (
+    <View className="p-4">
+      <View className="flex-row bg-gray-100 rounded-xl p-1">
+        <TouchableOpacity 
+          className={`flex-1 py-3 rounded-lg ${transactionType === 'expense' ? 'bg-white shadow' : ''}`}
+          onPress={() => handleTypeChange('expense')}
+        >
+          <Text className={`text-center font-medium ${transactionType === 'expense' ? 'text-[#006D77]' : 'text-gray-600'}`}>
+            Expense
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          className={`flex-1 py-3 rounded-lg ${transactionType === 'income' ? 'bg-white shadow' : ''}`}
+          onPress={() => handleTypeChange('income')}
+        >
+          <Text className={`text-center font-medium ${transactionType === 'income' ? 'text-[#006D77]' : 'text-gray-600'}`}>
+            Income
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const AmountInput = () => (
+    <View className="px-4 mb-6">
+      <Text className="text-gray-500 mb-2">Amount</Text>
+      <View className="flex-row items-center bg-gray-50 rounded-xl p-4 mb-3">
+        <Text className="text-gray-600 text-lg mr-2">KES</Text>
+        <TextInput
+          className="flex-1 text-2xl font-semibold text-gray-900"
+          placeholder="0.00"
+          keyboardType="numeric"
+          value={formValues.amount}
+          onChangeText={value => handleFormChange('amount', value)}
+        />
       </View>
 
-      <ScrollView className="flex-1 px-4 pt-4">
-        {/* Category Grid */}
-        <Text className="text-lg font-semibold mb-3">Category</Text>
-        <View className="flex-row flex-wrap gap-3">
-          {currentCategories.map((category) => (
-            <Pressable
-              key={category.id}
-              className={`w-[100px] aspect-square rounded-2xl p-4 ${
-                selectedCategory === category.id ? 'bg-blue-50 border-2 border-blue-500' : 'bg-white'
-              }`}
-              onPress={() => setSelectedCategory(category.id)}
-            >
-              <View className="flex-1 items-center justify-center">
-                <View
-                  className="w-12 h-12 rounded-full items-center justify-center mb-2"
-                  style={{ backgroundColor: `${category.color}20` }}
-                >
-                  <Ionicons 
-                    name={category.icon as any} 
-                    size={24} 
-                    color={category.color} 
-                  />
-                </View>
-                <Text className="text-center text-gray-700">{category.name}</Text>
-              </View>
-            </Pressable>
-          ))}
-        </View>
-
-        {/* Date & Description */}
-        <View className="mt-6 space-y-4">
-          <Pressable
-            className="flex-row items-center bg-white p-4 rounded-xl"
-            onPress={() => setShowDatePicker(true)}
+      {/* Quick Amount Grid */}
+      <View className="flex-row flex-wrap justify-between">
+        {QuickAmounts.map((item, index) => (
+          <TouchableOpacity
+            key={index}
+            className={`w-[31%] py-3 mb-3 rounded-xl justify-center items-center border
+              ${formValues.amount === item.amount?.toString() ? 'border-[#006D77] bg-[#006D77]/5' : 'border-gray-200'}`}
+            onPress={() => item.amount && handleFormChange('amount', item.amount.toString())}
           >
-            <View className="w-10 h-10 rounded-full bg-blue-100 items-center justify-center">
-              <Ionicons name="calendar" size={20} color="#2563EB" />
-            </View>
-            <View className="ml-3">
-              <Text className="text-sm text-gray-500">Date</Text>
-              <Text className="text-gray-700 font-medium">
-                {date.toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </Text>
-            </View>
-          </Pressable>
+            <Text className={`font-medium ${formValues.amount === item.amount?.toString() ? 'text-[#006D77]' : 'text-gray-700'}`}>
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
 
-          <View className="bg-white p-4 rounded-xl">
-            <Text className="text-sm text-gray-500 mb-2">Description</Text>
-            <TextInput
-              className="text-gray-700"
-              placeholder="What's this transaction for?"
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-              value={description}
-              onChangeText={setDescription}
-            />
-          </View>
+  const CategorySelector = () => (
+    <View className="px-4 mb-6">
+      <Text className="text-gray-500 mb-2">Category</Text>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        className="mb-4"
+      >
+        <View className="flex-row gap-3">
+          {renderCategoryItems()}
         </View>
       </ScrollView>
+    </View>
+  );
+
+  const DateSelector = () => (
+    <TouchableOpacity 
+      className="px-4 py-4 mb-6 flex-row items-center justify-between bg-gray-50 mx-4 rounded-xl"
+      onPress={() => setShowDatePicker(true)}
+    >
+      <View className="flex-row items-center">
+        <Ionicons name="calendar-outline" size={24} color="#666" className="mr-3" />
+        <Text className="text-gray-700">
+          {formValues.date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })}
+        </Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color="#666" />
+    </TouchableOpacity>
+  );
+
+  const DescriptionInput = () => (
+    <View className="px-4 mb-6">
+    <Text className="text-gray-500 mb-2">Description</Text>
+    <TextInput
+      className="bg-gray-50 p-4 rounded-xl text-gray-700"
+      placeholder="What's this transaction for?"
+      multiline
+      value={formValues.description}
+      onChangeText={value => handleFormChange('description', value)}
+    />
+  </View>
+  );
+
+  const SaveButton = () => (
+    <View className="p-4 border-t border-gray-100">
+      <TouchableOpacity
+        className={`w-full py-4 rounded-full items-center
+          ${isSubmitting ? 'bg-gray-300' : 'bg-[#006D77]'}`}
+        onPress={handleSave}
+        disabled={isSubmitting || !formValues.amount || !formValues.categoryId}
+      >
+        {isSubmitting ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text className="text-white font-semibold text-lg">
+            Save Transaction
+          </Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <SafeAreaView className="flex-1 bg-white">
+      <StatusBar style="dark" />
+      
+      {/* Render the separated component sections */}
+      <Header />
+
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <ScrollView className="flex-1">
+          <TypeSelector />
+          <AmountInput />
+          <CategorySelector />
+          <DateSelector />
+          <DescriptionInput />
+        </ScrollView>
+
+        <SaveButton />
+      </KeyboardAvoidingView>
 
       {showDatePicker && (
         <DateTimePicker
-          value={date}
+          value={formValues.date}
           mode="date"
           onChange={(event, selectedDate) => {
             setShowDatePicker(false);
@@ -259,7 +355,7 @@ export default function Add() {
               tomorrow.setHours(0, 0, 0, 0);
 
               if (selectedDate < tomorrow) {
-                setDate(selectedDate);
+                handleFormChange('date', selectedDate);
               } else {
                 Alert.alert('Invalid Date', 'Cannot select future dates');
               }

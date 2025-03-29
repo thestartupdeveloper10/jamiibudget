@@ -1,6 +1,10 @@
 import { Tabs } from "expo-router"
 import { Ionicons } from '@expo/vector-icons';
 import { View } from "react-native"
+import { enableScreens } from 'react-native-screens';
+
+// Enable screens
+enableScreens();
 
 export default function TabsLayout() {
   return (
@@ -10,10 +14,18 @@ export default function TabsLayout() {
         tabBarStyle: {
           elevation: 0,
           borderTopWidth: 1,
-          borderTopColor: '#f1f1f1',
-          height:60
+          borderTopColor: '#E5E7EB',
+          height: 65,
+          paddingBottom: 10,
+          paddingTop: 10,
+          backgroundColor: 'white',
         },
-        
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
+        tabBarActiveTintColor: '#006D77',
+        tabBarInactiveTintColor: '#9CA3AF',
       }}
     >
       <Tabs.Screen 
@@ -21,31 +33,28 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Ionicons name="home-outline" size={24} color={color} />
           ),
-          tabBarActiveTintColor:'#351e1a'
         }}
       />
       <Tabs.Screen
         name="transactions"
         options={{
-          title: 'Transactions',
+          title: 'Accounts',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list" size={size} color={color} />
+            <Ionicons name="wallet-outline" size={24} color={color} />
           ),
-          tabBarActiveTintColor:'#351e1a'
         }}
       />
       <Tabs.Screen
         name="add"
         options={{
-          title: "Add",
-          tabBarIcon: ({ color, size }) => (
-            <View className="bg-[#351e1a] -mt-10 h-16 w-16 flex justify-center items-center rounded-full">
-              <Ionicons name="add" size={size} color="white" className="" />
+          title: '',
+          tabBarIcon: ({ color }) => (
+            <View className="bg-[#006D77] w-14 h-14 rounded-full items-center justify-center -mt-5 shadow-lg">
+              <Ionicons name="add" size={32} color="white" />
             </View>
           ),
-          tabBarActiveTintColor:'#351e1a'
         }}
       />
       <Tabs.Screen
@@ -53,9 +62,8 @@ export default function TabsLayout() {
         options={{
           title: 'Reports',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="stats-chart" size={size} color={color} />
+            <Ionicons name="stats-chart-outline" size={24} color={color} />
           ),
-          tabBarActiveTintColor:'#351e1a'
         }}
       />
       <Tabs.Screen
@@ -63,9 +71,8 @@ export default function TabsLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person" size={size} color={color} />
+            <Ionicons name="person-outline" size={24} color={color} />
           ),
-          tabBarActiveTintColor:'#351e1a'
         }}
       />
     </Tabs>

@@ -8,40 +8,43 @@ import { useTransactionStore } from '../../contexts/TransactionContext';
 
 const BUDGET_CATEGORIES = {
   needs: {
-    title: 'Needs (50%)',
-    description: 'Essential expenses',
-    color: '#FF6B6B',
+    title: 'Essential Needs',
+    subtitle: '50% of Income',
+    description: 'Basic living expenses that you must pay',
+    color: '#006D77',
     percentage: 0.5,
-    icon: 'home',
+    icon: 'home-outline',
     items: [
-      { name: 'Rent/Mortgage', percentage: 0.25 },
-      { name: 'Utilities', percentage: 0.1 },
-      { name: 'Groceries', percentage: 0.1 },
-      { name: 'Transport', percentage: 0.05 },
+      { name: 'Housing', percentage: 0.25, icon: 'home-outline' },
+      { name: 'Utilities', percentage: 0.1, icon: 'flash-outline' },
+      { name: 'Groceries', percentage: 0.1, icon: 'cart-outline' },
+      { name: 'Transport', percentage: 0.05, icon: 'car-outline' },
     ]
   },
   wants: {
-    title: 'Wants (30%)',
-    description: 'Lifestyle choices',
-    color: '#4ECDC4',
+    title: 'Lifestyle',
+    subtitle: '30% of Income',
+    description: 'Non-essential but important expenses',
+    color: '#2A9D8F',
     percentage: 0.3,
-    icon: 'game-controller',
+    icon: 'heart-outline',
     items: [
-      { name: 'Entertainment', percentage: 0.1 },
-      { name: 'Shopping', percentage: 0.1 },
-      { name: 'Dining Out', percentage: 0.1 },
+      { name: 'Entertainment', percentage: 0.1, icon: 'game-controller-outline' },
+      { name: 'Shopping', percentage: 0.1, icon: 'bag-outline' },
+      { name: 'Dining Out', percentage: 0.1, icon: 'restaurant-outline' },
     ]
   },
   savings: {
-    title: 'Savings (20%)',
-    description: 'Future security',
-    color: '#45B7D1',
+    title: 'Financial Goals',
+    subtitle: '20% of Income',
+    description: 'Saving and investing for the future',
+    color: '#E9C46A',
     percentage: 0.2,
-    icon: 'save',
+    icon: 'trending-up-outline',
     items: [
-      { name: 'Emergency Fund', percentage: 0.1 },
-      { name: 'Investments', percentage: 0.05 },
-      { name: 'Debt Payment', percentage: 0.05 },
+      { name: 'Emergency Fund', percentage: 0.1, icon: 'shield-outline' },
+      { name: 'Investments', percentage: 0.05, icon: 'bar-chart-outline' },
+      { name: 'Debt Payment', percentage: 0.05, icon: 'cash-outline' },
     ]
   }
 };
@@ -63,7 +66,8 @@ export default function BudgetPlanner() {
   };
 
   const BudgetCard = ({ 
-    title, 
+    title,
+    subtitle, 
     description, 
     amount, 
     color, 
@@ -71,38 +75,59 @@ export default function BudgetPlanner() {
     items 
   }: { 
     title: string;
+    subtitle: string;
     description: string;
     amount: number;
     color: string;
     icon: keyof typeof Ionicons.glyphMap;
-    items: { name: string; percentage: number; }[];
+    items: { name: string; percentage: number; icon: keyof typeof Ionicons.glyphMap; }[];
   }) => (
-    <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
-      <View className="flex-row items-center mb-3">
-        <View 
-          className="w-12 h-12 rounded-full items-center justify-center mr-3"
-          style={{ backgroundColor: `${color}20` }}
-        >
-          <Ionicons name={icon} size={24} color={color} />
+    <View className="bg-white rounded-2xl shadow-sm mb-6 overflow-hidden">
+      <View className="p-4 border-b border-gray-100">
+        <View className="flex-row items-center mb-2">
+          <View 
+            className="w-12 h-12 rounded-full items-center justify-center mr-3"
+            style={{ backgroundColor: `${color}15` }}
+          >
+            <Ionicons name={icon} size={24} color={color} />
+          </View>
+          <View className="flex-1">
+            <Text className="text-lg font-semibold text-gray-900">{title}</Text>
+            <Text className="text-gray-500 text-sm">{subtitle}</Text>
+          </View>
+          <Text className="text-xl font-bold" style={{ color }}>
+            {formatAmount(amount)}
+          </Text>
         </View>
-        <View className="flex-1">
-          <Text className="text-lg font-semibold">{title}</Text>
-          <Text className="text-gray-500">{description}</Text>
-        </View>
-        <Text className="text-xl font-bold" style={{ color }}>
-          {formatAmount(amount)}
-        </Text>
+        <Text className="text-gray-500 text-sm">{description}</Text>
       </View>
       
-      <View className="space-y-2">
+      <View className="divide-y divide-gray-100">
         {items.map((item, index) => (
-          <View key={index} className="flex-row justify-between items-center">
-            <Text className="text-gray-600">{item.name}</Text>
-            <View className="flex-row items-center">
-              <Text className="text-gray-800 font-medium mr-2">
-                {formatAmount(monthlySalary * item.percentage)}
+          <View key={index} className="flex-row items-center p-4">
+            <View 
+              className="w-10 h-10 rounded-full items-center justify-center mr-3"
+              style={{ backgroundColor: `${color}10` }}
+            >
+              <Ionicons name={item.icon} size={20} color={color} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-gray-900 font-medium">{item.name}</Text>
+              <Text className="text-gray-500 text-sm">
+                {(item.percentage * 100)}% • {formatAmount(monthlySalary * item.percentage)}
               </Text>
-              <Text className="text-gray-500">({(item.percentage * 100)}%)</Text>
+            </View>
+            <View 
+              className="h-2 w-24 rounded-full bg-gray-100 overflow-hidden"
+              style={{ backgroundColor: `${color}15` }}
+            >
+              <View 
+                className="h-full rounded-full"
+                style={{ 
+                  backgroundColor: color,
+                  width: `${(item.percentage / 0.5) * 100}%`
+                }}
+              />
             </View>
           </View>
         ))}
@@ -115,37 +140,48 @@ export default function BudgetPlanner() {
       <StatusBar style="dark" />
       
       {/* Header */}
-      <View className="bg-white">
+      <View className="bg-white border-b border-gray-100">
         <View className="flex-row justify-between items-center px-4 py-4">
           <TouchableOpacity 
             onPress={() => router.back()}
-            className="w-10 h-10 items-center justify-center rounded-full bg-gray-100"
+            className="w-10 h-10 items-center justify-center rounded-full bg-gray-50"
           >
-            <Ionicons name="chevron-back" size={24} color="black" />
+            <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text className="text-xl font-semibold">Budget Planner</Text>
+          <Text className="text-xl font-semibold text-gray-900">Budget Planner</Text>
           <View className="w-10" />
         </View>
       </View>
 
       <ScrollView className="flex-1 p-4">
         {/* Monthly Income Card */}
-        <View className="bg-[#351e1a] rounded-xl p-6 mb-6">
-          <Text className="text-white text-lg mb-2">Monthly Income</Text>
-          <Text className="text-white text-3xl font-bold">
-            {formatAmount(monthlySalary)}
+        <View className="bg-[#006D77] rounded-2xl p-6 mb-6">
+          <View className="flex-row items-center mb-2">
+            <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center">
+              <Ionicons name="wallet-outline" size={24} color="white" />
+            </View>
+            <View className="ml-3">
+              <Text className="text-white/80 text-sm">Monthly Income</Text>
+              <Text className="text-white text-2xl font-bold">
+                {formatAmount(monthlySalary)}
+              </Text>
+            </View>
+          </View>
+          <Text className="text-white/60 text-sm">
+            Your budget is calculated based on your monthly income
           </Text>
         </View>
 
-        {/* Budget Breakdown */}
+        {/* Budget Categories */}
         {Object.entries(BUDGET_CATEGORIES).map(([key, category]) => (
           <BudgetCard
             key={key}
             title={category.title}
+            subtitle={category.subtitle}
             description={category.description}
             amount={monthlySalary * category.percentage}
             color={category.color}
-            icon={category.icon as keyof typeof Ionicons.glyphMap}
+            icon={category.icon}
             items={category.items}
           />
         ))}

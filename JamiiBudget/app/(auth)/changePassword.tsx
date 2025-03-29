@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, TextInput, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -73,76 +73,129 @@ export default function ChangePassword() {
       <StatusBar style="dark" />
       
       {/* Header */}
-      <View className="bg-white">
+      <View className="bg-white border-b border-gray-100">
         <View className="flex-row justify-between items-center px-4 py-4">
           <TouchableOpacity 
             onPress={() => router.back()}
-            className="w-10 h-10 items-center justify-center rounded-full bg-gray-100"
+            className="w-10 h-10 items-center justify-center rounded-full bg-gray-50"
           >
-            <Ionicons name="chevron-back" size={24} color="black" />
+            <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
-          <Text className="text-xl font-semibold">Change Password</Text>
+          <Text className="text-xl font-semibold text-gray-900">Change Password</Text>
           <View className="w-10" />
         </View>
       </View>
 
-      <View className="flex-1 p-4">
-        <View className="bg-white rounded-xl p-4 space-y-4">
-          <View>
-            <Text className="text-gray-500 mb-2">Current Password</Text>
+      <ScrollView className="flex-1 p-4">
+        <View className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          {/* Current Password */}
+          <View className="p-4 border-b border-gray-100">
+            <View className="flex-row items-center mb-2">
+              <View className="w-10 h-10 rounded-full bg-[#006D77]/10 items-center justify-center mr-3">
+                <Ionicons name="lock-closed-outline" size={20} color="#006D77" />
+              </View>
+              <Text className="text-gray-700 font-medium">Current Password</Text>
+            </View>
             <TextInput
               secureTextEntry
-              className="bg-gray-100 p-3 rounded-lg"
+              className="bg-gray-50 mt-2 p-4 rounded-xl text-gray-900"
               value={currentPassword}
               onChangeText={setCurrentPassword}
-              placeholder="Enter current password"
+              placeholder="Enter your current password"
+              placeholderTextColor="#9CA3AF"
               autoCapitalize="none"
             />
           </View>
 
-          <View>
-            <Text className="text-gray-500 mb-2">New Password</Text>
+          {/* New Password */}
+          <View className="p-4 border-b border-gray-100">
+            <View className="flex-row items-center mb-2">
+              <View className="w-10 h-10 rounded-full bg-[#2A9D8F]/10 items-center justify-center mr-3">
+                <Ionicons name="key-outline" size={20} color="#2A9D8F" />
+              </View>
+              <Text className="text-gray-700 font-medium">New Password</Text>
+            </View>
             <TextInput
               secureTextEntry
-              className="bg-gray-100 p-3 rounded-lg"
+              className="bg-gray-50 mt-2 p-4 rounded-xl text-gray-900"
               value={newPassword}
               onChangeText={setNewPassword}
-              placeholder="Enter new password"
+              placeholder="Enter your new password"
+              placeholderTextColor="#9CA3AF"
               autoCapitalize="none"
             />
           </View>
 
-          <View>
-            <Text className="text-gray-500 mb-2">Confirm New Password</Text>
+          {/* Confirm Password */}
+          <View className="p-4">
+            <View className="flex-row items-center mb-2">
+              <View className="w-10 h-10 rounded-full bg-[#E9C46A]/10 items-center justify-center mr-3">
+                <Ionicons name="checkmark-outline" size={20} color="#E9C46A" />
+              </View>
+              <Text className="text-gray-700 font-medium">Confirm Password</Text>
+            </View>
             <TextInput
               secureTextEntry
-              className="bg-gray-100 p-3 rounded-lg"
+              className="bg-gray-50 mt-2 p-4 rounded-xl text-gray-900"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
-              placeholder="Confirm new password"
+              placeholder="Confirm your new password"
+              placeholderTextColor="#9CA3AF"
               autoCapitalize="none"
             />
           </View>
+        </View>
 
-          {error ? (
-            <Text className="text-red-500 text-center">{error}</Text>
-          ) : null}
+        {/* Password Requirements */}
+        <View className="mt-6 bg-white rounded-2xl p-4 shadow-sm">
+          <View className="flex-row items-center mb-3">
+            <Ionicons name="information-circle-outline" size={20} color="#006D77" />
+            <Text className="text-gray-700 font-medium ml-2">Password Requirements</Text>
+          </View>
+          <View className="space-y-2">
+            <View className="flex-row items-center">
+              <View className="w-2 h-2 rounded-full bg-gray-300 mr-2" />
+              <Text className="text-gray-600">At least 8 characters long</Text>
+            </View>
+            <View className="flex-row items-center">
+              <View className="w-2 h-2 rounded-full bg-gray-300 mr-2" />
+              <Text className="text-gray-600">Must be different from current password</Text>
+            </View>
+          </View>
+        </View>
 
+        {/* Error Message */}
+        {error ? (
+          <View className="mt-4 bg-red-50 p-4 rounded-xl">
+            <View className="flex-row items-center">
+              <Ionicons name="alert-circle-outline" size={20} color="#EF4444" />
+              <Text className="text-red-600 ml-2">{error}</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* Submit Button */}
+        <View className="mt-6">
           <TouchableOpacity
             onPress={handleChangePassword}
             disabled={loading}
-            className={`bg-[#351e1a] py-3 mt-3 rounded-lg ${loading ? 'opacity-50' : ''}`}
+            className={`bg-[#006D77] py-4 rounded-xl flex-row items-center justify-center
+              ${loading ? 'opacity-50' : ''}`}
           >
-            <Text className="text-white text-center font-medium">
-              {loading ? 'Changing Password...' : 'Change Password'}
-            </Text>
+            {loading ? (
+              <>
+                <Ionicons name="reload-outline" size={20} color="white" className="animate-spin" />
+                <Text className="text-white font-medium ml-2">Changing Password...</Text>
+              </>
+            ) : (
+              <>
+                <Ionicons name="save-outline" size={20} color="white" />
+                <Text className="text-white font-medium ml-2">Update Password</Text>
+              </>
+            )}
           </TouchableOpacity>
         </View>
-
-        <Text className="text-gray-500 text-sm text-center mt-4">
-          Password must be at least 8 characters long
-        </Text>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 } 
